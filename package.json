@@ -1,8 +1,8 @@
 {
-  "name": "celestial-crash-online-mvp",
-  "version": "0.1.0",
+  "name": "celestial-crash-online",
+  "version": "0.2.0",
   "private": true,
-  "description": "Free-first WebSocket matchmaking foundation for Celestial Crash",
+  "description": "Free-first WebSocket matchmaking and automatic battle relay for Celestial Crash",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
