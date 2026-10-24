@@ -1,12 +1,13 @@
 {
   "name": "celestial-crash-online",
-  "version": "0.2.0",
+  "version": "0.4.0",
   "private": true,
-  "description": "Free-first WebSocket matchmaking and automatic battle relay for Celestial Crash",
+  "description": "Celestial Crash Online authoritative battle server with source-derived V45 combat rules",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "check": "node --check server.js"
+    "check": "node --check server.js && node --check source_mechanics.js",
+    "test": "node test_source_rules.js && node test_button_pilot.js"
   },
   "engines": { "node": ">=20" },
   "dependencies": { "ws": "^8.18.3" }

@@ -13,6 +13,7 @@
 const http = require('node:http');
 const crypto = require('node:crypto');
 const { WebSocketServer, WebSocket } = require('ws');
+const SOURCE_RULES = require('./source_mechanics');
 
 const PORT = Number(process.env.PORT || 10000);
 const MAX_MESSAGE_BYTES = 16 * 1024;
@@ -34,7 +35,7 @@ const FIGHTER_IDS = new Set([
 ]);
 const ARENA = Object.freeze({ x: 45, y: 45, w: 630, h: 630 });
 const FIGHTER_R = 22;
-const START_HP = 390;
+const START_HP = SOURCE_RULES.BASE_HP;
 
 const MODES = Object.freeze({
   classic_1v1: { label: 'Classic 1v1', players: 2, teams: 'versus', ranked: false },
@@ -83,8 +84,8 @@ const server = http.createServer((req, res) => {
     json(res, 200, {
       ok: true,
       service: 'celestial-crash-online',
-      stage: 'server-authoritative-combat-v1',
-      engineVersion: 'server-auto-battle-button-pilot-v2',
+      stage: 'source-mechanics-migration-v1',
+      engineVersion: 'server-auto-battle-source-rules-v1',
       queuedPlayers: queuedCount(),
       activeRooms: rooms.size,
       connectedPlayers: clients.size,
@@ -92,7 +93,7 @@ const server = http.createServer((req, res) => {
       simulationHz: Math.round(1000 / TICK_MS),
       snapshotsHz: Math.round(1000 / SNAPSHOT_MS),
       rankedRated: false,
-      note: 'The server owns combat state and results. Button has a bespoke server-side pilot for its original-inspired attacks, traps, counter-thread, and ultimate. Other characters still use general combat profiles; full roster parity is not yet complete. Ranked queues remain unrated previews.'
+      note: 'The server owns combat state and results. Shared HP, damage, shield, healing, defense hooks, and skill cooldown metadata are source-derived from V45. Button has a bespoke server-side pilot. Other characters still use generic ability effects; full roster parity is not yet complete. Ranked queues remain unrated previews.'
     });
     return;
   }
@@ -168,7 +169,7 @@ function emitEvent(room, type, payload = {}) {
   room.sim.events.push({ seq: room.sim.eventSeq, type, ...payload });
   if (room.sim.events.length > 80) room.sim.events.splice(0, room.sim.events.length - 80);
 }
-function capTeamShield(fighter) { fighter.shield = clamp(fighter.shield, 0, fighter.id === 'magnetar' ? 32 : 26); }
+function capTeamShield(fighter) { SOURCE_RULES.capShield(fighter); }
 
 function initialPosition(player, mode, count) {
   if (count === 2) {
@@ -189,15 +190,16 @@ function makeSimFighter(player, room) {
   const speed = 124 + Math.random() * 12;
   const melee = MELEE.has(player.fighterId);
   const isButton = player.fighterId === 'button';
+  const maxHp = SOURCE_RULES.maxHpFor(player.fighterId);
+  const startHp = SOURCE_RULES.initialHpFor(player.fighterId);
   return {
     uid: crypto.randomUUID(), playerId: player.id, playerIndex: player.playerIndex,
     fighterId: player.fighterId, id: player.fighterId, team: player.team,
     x: pos.x, y: pos.y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
-    r: FIGHTER_R, hp: isButton ? 410 : START_HP, maxHp: isButton ? 410 : START_HP, shield: 0, age: 0, anim: Math.random() * 10,
-    dead: false, koTime: 0, attackCD: isButton ? 0.78 + Math.random() * 0.12 : 1.1 + Math.random() * 0.35,
-    skillCD: isButton
-      ? [1.9 + Math.random() * 0.4, 4.2 + Math.random() * 0.4, 6.8 + Math.random() * 0.4, 14.5 + Math.random()]
-      : [2.4 + Math.random() * 0.6, 4.8 + Math.random() * 0.7, 7.0 + Math.random() * 0.8, 14.5 + Math.random()],
+    r: FIGHTER_R, hp: startHp, maxHp, shield: 0, age: 0, anim: Math.random() * 10, lastHitAt: 0, sourceHealSecond: -1, sourceHealApplied: 0, mirrorTimer: 0, sourceSustainSecond: -1, sourceSustainGiven: 0,
+    dead: false, koTime: 0, attackCD: isButton ? 0.78 + (Math.random() * 0.14 - 0.06) : 1.25 + Math.random() * 0.15,
+    // Match V45's shared makeFighter initial cooldown bands for all characters.
+    skillCD: [1.9 + Math.random() * 0.4, 4.2 + Math.random() * 0.4, 6.8 + Math.random() * 0.4, 14.5 + Math.random()],
     contactCD: 0.45, hitFlash: 0, invuln: 0, stun: 0, burn: 0, rooted: 0, slow: 0,
     energy: 0, lastDir: player.team % 2 === 0 ? 1 : -1,
     melee, attackStyle: isButton ? 'button' : (RANGED_VISUALS[player.fighterId] || 'starbolt'),
@@ -277,8 +279,10 @@ function enqueue(player, mode, fighterId) {
 function dealDamage(room, target, rawDamage, source, reason = 'projectile') {
   if (!target || target.dead || target.invuln > 0) return 0;
   if (source && !isEnemy(source, target, room)) return 0;
+
+  // Preserve the Button source wrapper: it adjusts incoming raw damage before
+  // the shared V10 damage pipeline applies source tuning and the global .68 factor.
   if (target.id === 'button') {
-    // V45 Button's offline hurt wrapper reduces incoming damage by 6%, or 60% during its ultimate.
     rawDamage *= target.btUlt > 0 ? 0.4 : 0.94;
     if (source && isEnemy(source, target, room) && !['burn', 'passive', 'button_passive', 'button_counter'].includes(reason)) {
       const d = Math.hypot(source.x - target.x, source.y - target.y);
@@ -290,37 +294,87 @@ function dealDamage(room, target, rawDamage, source, reason = 'projectile') {
       }
     }
   }
-  let damage = Math.max(0, rawDamage);
+
+  // V45's final hurt chain: V10 source multipliers + .68 raw factor, ability
+  // factor, then zHurt's defender passives, then the target's shield.
+  if (source && rawDamage > 0) target.lastHitAt = room.sim.elapsed;
+  let damage = SOURCE_RULES.scaleOutgoingDamage(rawDamage, source?.id, reason);
+
   if (target.id === 'blackhole') damage *= 0.9;
   if (target.id === 'quasar' && target.shield > 0) damage *= 0.92;
-  if (target.id === 'chrono' && Math.random() < 0.08) {
+  if (target.id === 'pebble') damage *= 0.9;
+  if (target.id === 'earth') {
+    damage *= 0.93;
+    if (source?.id === 'blackhole') damage *= 0.68;
+  }
+  if (target.id === 'jupiter') damage *= 0.86;
+  if (target.id === 'neptune' && target.hp < target.maxHp * 0.45) damage *= 0.8;
+
+  // Evasion passives are resolved by the server, never by client visuals.
+  const dodgeChance = target.id === 'chrono' ? 0.14 : target.id === 'nebula' ? 0.12 : target.id === 'mercury' ? 0.04 : target.id === 'zapmoth' ? 0.06 : 0;
+  if (dodgeChance && Math.random() < dodgeChance) {
     emitEvent(room, 'dodge', { targetUid: target.uid, x: target.x, y: target.y });
     return 0;
   }
+  if (target.id === 'photon' && Math.random() < 0.12) {
+    target.shield = Math.min(SOURCE_RULES.shieldCapFor('photon'), (target.shield || 0) + 2.6);
+    capTeamShield(target);
+    emitEvent(room, 'dodge', { targetUid: target.uid, x: target.x, y: target.y, passive: 'lightstep', shield: target.shield });
+    return 0;
+  }
+
+  const shieldBefore = target.shield;
   if (target.shield > 0) {
     const blocked = Math.min(target.shield, damage);
-    target.shield -= blocked; damage -= blocked;
+    target.shield -= blocked;
+    damage -= blocked;
   }
-  target.hp = Math.max(0, target.hp - damage);
+  const hpBefore = target.hp;
+  target.hp = Math.max(0, target.hp - Math.max(0, damage));
+  const healthDamage = Math.max(0, hpBefore - target.hp);
   target.hitFlash = 0.18;
-  target.energy = Math.min(100, target.energy + rawDamage * 0.25);
+  target.energy = Math.min(100, target.energy + Math.max(0, damage) * 0.25);
+  const passiveIndex = target.passiveTicks;
   target.passiveTicks += 1;
   room.sim.impacts += 1;
-  if (source && source.id === 'magnetar' && reason === 'melee') source.shield = Math.min(32, source.shield + 1.25);
-  if (source && source.id === 'solarflare') target.burn = Math.max(target.burn, 1.1);
-  if (source && source.id === 'comet') { target.vx += (target.x - source.x) * 0.45; target.vy += (target.y - source.y) * 0.45; }
+
+  // Source-backed defensive shield triggers from zHurt; cap enforcement is
+  // then performed using the same character-specific V10 shield-cap table.
+  if (target.id === 'stardust' && passiveIndex % 5 === 4) target.shield += 6;
+  if (target.id === 'earth' && passiveIndex % 7 === 6) target.shield += 4;
+  if (target.id === 'siren' && passiveIndex % 6 === 5) target.shield += 2;
+  if (target.id === 'saturn' && passiveIndex % 4 === 3) target.shield += 12;
+
+  if (source && source.id === 'magnetar' && reason === 'melee') source.shield = Math.min(SOURCE_RULES.shieldCapFor('magnetar'), (source.shield || 0) + 1.25);
+  if (source && source.id === 'solarflare') target.burn = Math.max(target.burn || 0, 1.3);
+  if (source && source.id === 'comet') { target.vx += (target.x - source.x) * 0.8; target.vy += (target.y - source.y) * 0.8; }
+  if (target.id === 'mimic') target.mirrorTimer = Math.max(target.mirrorTimer || 0, 0.35);
+
+  // Source sustain is based on actual HP damage after shielding, with the
+  // original per-second cap and per-character heal scaling applied afterwards.
+  if (healthDamage > 0 && source && !source.twin && !SOURCE_RULES.NO_SUSTAIN_REASONS.has(reason) && SOURCE_RULES.SUSTAIN[source.id]) {
+    const second = Math.floor(room.sim.elapsed);
+    if (source.sourceSustainSecond !== second) { source.sourceSustainSecond = second; source.sourceSustainGiven = 0; }
+    const amount = Math.min(healthDamage * SOURCE_RULES.SUSTAIN[source.id], Math.max(0, 4.2 - (source.sourceSustainGiven || 0)));
+    if (amount > 0) {
+      source.sourceSustainGiven = (source.sourceSustainGiven || 0) + amount;
+      SOURCE_RULES.applySourceHeal(source, amount, room.sim.elapsed);
+    }
+  }
+
+  capTeamShield(target);
+  if (source) capTeamShield(source);
   emitEvent(room, 'hit', {
     ownerUid: source?.uid || null, targetUid: target.uid, x: target.x, y: target.y,
-    damage: Math.round((rawDamage - (target.shield > 0 ? 0 : 0)) * 10) / 10,
+    damage: Math.round(healthDamage * 10) / 10,
+    absorbed: Math.round(Math.max(0, shieldBefore - target.shield) * 10) / 10,
     reason
   });
   if (target.hp <= 0) {
     target.dead = true; target.koTime = 0;
     emitEvent(room, 'ko', { ownerUid: source?.uid || null, targetUid: target.uid, x: target.x, y: target.y });
   }
-  capTeamShield(target);
-  if (source) capTeamShield(source);
-  return damage;
+  return healthDamage;
 }
 function fireProjectile(room, source, target, skillIndex = null) {
   const dx = target.x - source.x, dy = target.y - source.y;
@@ -374,7 +428,7 @@ function buttonSpend(room, f) {
 }
 function buttonDeal(room, target, raw, source, reason) {
   // Offline hurt() scales raw attacks by 0.68 before applying defenses.
-  return dealDamage(room, target, raw * 0.68, source, reason);
+  return dealDamage(room, target, raw, source, reason);
 }
 function buttonEmitSkill(room, f, target, index, payload = {}) {
   const names = ['btS0', 'btS1', 'btS2', 'btS3'];
@@ -390,7 +444,7 @@ function buttonRangedAttack(room, f, target) {
     uid: crypto.randomUUID(), owner: f.uid, target: target.uid,
     x: f.x + dx / d * (f.r + 5), y: f.y + dy / d * (f.r + 5),
     vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, r: 5,
-    damage: 3.2 * 0.68, age: 0, life: 1.7, type: 'button', s: 'button', rot: angle,
+    damage: 3.2, age: 0, life: 1.7, type: 'button', s: 'button', rot: angle,
     skillIndex: null, team: f.team, trail: []
   };
   room.sim.projectiles.push(proj);
@@ -419,8 +473,7 @@ function buttonBasicAttack(room, f, target, distance) {
 }
 function castButtonSkill(room, f, target, index) {
   if (!target || target.dead || f.dead || f.btUlt > 0) return;
-  const cooldownBase = [3.4, 6.2, 7.4, 16][index];
-  f.skillCD[index] = cooldownBase * (index === 3 ? 1.30 : 1.16) + (index === 3 ? 0 : (Math.random() * 0.24 - 0.12));
+  f.skillCD[index] = SOURCE_RULES.cooldownAfterCastFor(f.id, index);
   const power = buttonSpend(room, f);
   f.btCast = index === 0 ? 0.4 : index === 1 ? 0.45 : index === 2 ? 0.35 : 0;
   if (index === 0) {
@@ -443,7 +496,7 @@ function castButtonSkill(room, f, target, index) {
   } else if (index === 1) {
     const d = Math.hypot(target.x - f.x, target.y - f.y);
     const maxDistance = clamp(d + 85, 175, 310);
-    f.btStitch = { targetUid: target.uid, maxDistance, damage: 26 * power * 0.68, stun: 0.7, expiresAt: room.sim.elapsed + 7.5, power, snapped: false };
+    f.btStitch = { targetUid: target.uid, maxDistance, damage: 26 * power, stun: 0.7, expiresAt: room.sim.elapsed + 7.5, power, snapped: false };
     buttonEmitSkill(room, f, target, index, { maxDistance, power, duration: 7.5 });
     emitEvent(room, 'button_fx', { ownerUid: f.uid, targetUid: target.uid, fx: 'stitched', x: target.x, y: target.y, maxDistance });
   } else if (index === 2) {
@@ -581,7 +634,7 @@ function stepButtonPost(room, f, dt) {
         buttonDeal(room, q, 60 * f.btUltPower, f, 'button_ultimate');
         q.vx += Math.cos(a) * 300; q.vy += Math.sin(a) * 300; q.stun = Math.max(q.stun || 0, 0.6);
       }
-      f.hp = Math.min(f.maxHp, f.hp + 16); f.shield = Math.min(26, f.shield + 10); f.btSmileT = 1;
+      SOURCE_RULES.applySourceHeal(f, 16, room.sim.elapsed); f.shield = Math.min(26, f.shield + 10); f.btSmileT = 1;
       emitEvent(room, 'button_fx', { ownerUid: f.uid, fx: 'ult_final', x: f.x, y: f.y, power: f.btUltPower });
     }
   }
@@ -597,10 +650,12 @@ function stepFighter(room, f, dt) {
   f.rooted = Math.max(0, f.rooted - dt);
   f.attackCD -= dt; f.contactCD = Math.max(0, f.contactCD - dt);
   f.markTarget = Math.max(0, f.markTarget - dt);
-  f.burn -= dt;
-  if (f.burn > 0 && Math.random() < dt * 2) dealDamage(room, f, 1.1, room.sim.fighters.find(q => q.id === 'solarflare' && !q.dead && isEnemy(q, f, room)) || null, 'burn');
-  f.shield = Math.max(0, f.shield - dt * 2.2);
-  if (f.hp < f.maxHp) f.hp = Math.min(f.maxHp, f.hp + dt * 0.18);
+  f.burn = Math.max(0, f.burn - dt);
+  f.mirrorTimer = Math.max(0, (f.mirrorTimer || 0) - dt);
+  if (f.burn > 0 && Math.random() < dt * 2.08) dealDamage(room, f, 1.25, room.sim.fighters.find(q => q.id === 'solarflare' && !q.dead && isEnemy(q, f, room)) || null, 'burn');
+  f.shield = Math.min(SOURCE_RULES.shieldCapFor(f.id, !!f.twin), Math.max(0, f.shield - dt * 3.0));
+  const quietFor = room.sim.elapsed - (f.lastHitAt ?? room.sim.elapsed);
+  if (f.hp < f.maxHp) f.hp = Math.min(f.maxHp, f.hp + dt * (quietFor > 4 ? 0.72 : 0.12));
   const mult = f.stun > 0 ? 0.2 : f.rooted > 0 ? 0.4 : f.slow > 0 ? 0.68 : 1;
   f.dash = Math.max(0, (f.dash || 0) - dt);
   f.x += f.vx * dt * mult; f.y += f.vy * dt * mult;
@@ -625,7 +680,7 @@ function stepFighter(room, f, dt) {
   }
   // Attacks are automatic and server-timed; client frame-rate cannot affect them.
   if (f.attackCD <= 0) {
-    f.attackCD = (f.melee ? 1.0 : 1.25) + Math.random() * 0.22;
+    f.attackCD = 0.95 + (Math.random() * 0.23 - 0.10);
     if (f.melee) {
       if (distance <= f.r + target.r + 32) directStrike(room, f, target, null);
       else if (Math.random() < 0.35) fireProjectile(room, f, target, 0);
@@ -636,8 +691,7 @@ function stepFighter(room, f, dt) {
   for (let i = 0; i < f.skillCD.length; i++) {
     f.skillCD[i] -= dt;
     if (f.skillCD[i] <= 0) {
-      const base = [3.3, 5.0, 6.6, 14.8][i];
-      f.skillCD[i] = base + Math.random() * (i === 3 ? 1.4 : 0.9);
+      f.skillCD[i] = SOURCE_RULES.cooldownAfterCastFor(f.id, i);
       if (i === 3) {
         if (distance < 360) {
           if (f.melee && distance < 160) directStrike(room, f, target, 3);
@@ -652,7 +706,7 @@ function stepFighter(room, f, dt) {
     }
   }
   if (f.id === 'magnetar' && distance < 90 && f.shield < 32) f.shield = Math.min(32, f.shield + dt * 1.0);
-  if (f.id === 'voidbloom' && f.hp < f.maxHp) f.hp = Math.min(f.maxHp, f.hp + dt * 0.28);
+  if (f.id === 'voidbloom' && Math.random() < dt * 0.95) SOURCE_RULES.applySourceHeal(f, 0.5, room.sim.elapsed);
   capTeamShield(f);
 }
 function stepProjectiles(room, dt) {
@@ -663,7 +717,7 @@ function stepProjectiles(room, dt) {
     const target = room.sim.fighters.find((f) => f.uid === proj.target);
     const source = room.sim.fighters.find((f) => f.uid === proj.owner);
     if (target && source && isEnemy(source, target, room) && Math.hypot(target.x - proj.x, target.y - proj.y) < target.r + proj.r + 4) {
-      dealDamage(room, target, proj.damage, source, proj.skillIndex === null ? 'projectile' : 'skill');
+      dealDamage(room, target, proj.damage, source, proj.skillIndex === null ? 'projectile' : (proj.skillIndex === 3 ? 'ultimate' : 'skill'));
       if (target.id === 'blackhole') proj.age = proj.life;
       if (proj.age < proj.life) emitEvent(room, 'impact', { ownerUid: source.uid, targetUid: target.uid, x: proj.x, y: proj.y });
       continue;
