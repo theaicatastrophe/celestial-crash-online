@@ -22,7 +22,7 @@ const SNAPSHOT_MS = 50;              // 20 state snapshots/sec
 const MAX_QUEUE_PER_MODE = 300;
 const MAX_FIGHTERS = 4;
 const FIGHTER_ID_RE = /^[a-zA-Z0-9_-]{1,80}$/;
-// Keep in sync with the 57 character IDs in CelestialCrash_Online_Prototype.html.
+// Keep in sync with the online roster in CelestialCrash_Button_V46_Online_Pilot.html.
 const FIGHTER_IDS = new Set([
   'aquarius','archivist','aries','blackhole','cancer','capricorn','ceres','chatgpt',
   'chrono','cinder','claude','comet','dola','earth','eidolon','focalors','fourthwall',
@@ -30,7 +30,7 @@ const FIGHTER_IDS = new Set([
   'manacle','mars','mercury','metaai','mimic','moonbeam','nebula','neptune','nullity',
   'pebble','perplexity','photon','pisces','pluto','pulsar','quasar','sagittarius','saturn',
   'scorpio','seraphim','siren','solarflare','stardust','taurus','tidal','uranus','venus',
-  'virgo','voidbloom','whitehole','zapmoth'
+  'virgo','voidbloom','whitehole','zapmoth','button'
 ]);
 const ARENA = Object.freeze({ x: 45, y: 45, w: 630, h: 630 });
 const FIGHTER_R = 22;
@@ -84,7 +84,7 @@ const server = http.createServer((req, res) => {
       ok: true,
       service: 'celestial-crash-online',
       stage: 'server-authoritative-combat-v1',
-      engineVersion: 'server-auto-battle-core-v1',
+      engineVersion: 'server-auto-battle-button-pilot-v2',
       queuedPlayers: queuedCount(),
       activeRooms: rooms.size,
       connectedPlayers: clients.size,
@@ -92,7 +92,7 @@ const server = http.createServer((req, res) => {
       simulationHz: Math.round(1000 / TICK_MS),
       snapshotsHz: Math.round(1000 / SNAPSHOT_MS),
       rankedRated: false,
-      note: 'The server owns combat state and results. Clients are visual renderers. Ranked queues remain unrated previews. This core uses server-side general combat profiles; the full bespoke offline ability simulation is not yet parity-matched.'
+      note: 'The server owns combat state and results. Button has a bespoke server-side pilot for its original-inspired attacks, traps, counter-thread, and ultimate. Other characters still use general combat profiles; full roster parity is not yet complete. Ranked queues remain unrated previews.'
     });
     return;
   }
@@ -188,17 +188,27 @@ function makeSimFighter(player, room) {
   const angle = Math.random() * Math.PI * 2;
   const speed = 124 + Math.random() * 12;
   const melee = MELEE.has(player.fighterId);
+  const isButton = player.fighterId === 'button';
   return {
     uid: crypto.randomUUID(), playerId: player.id, playerIndex: player.playerIndex,
     fighterId: player.fighterId, id: player.fighterId, team: player.team,
     x: pos.x, y: pos.y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
-    r: FIGHTER_R, hp: START_HP, maxHp: START_HP, shield: 0, age: 0, anim: Math.random() * 10,
-    dead: false, koTime: 0, attackCD: 1.1 + Math.random() * 0.35,
-    skillCD: [2.4 + Math.random() * 0.6, 4.8 + Math.random() * 0.7, 7.0 + Math.random() * 0.8, 14.5 + Math.random()],
+    r: FIGHTER_R, hp: isButton ? 410 : START_HP, maxHp: isButton ? 410 : START_HP, shield: 0, age: 0, anim: Math.random() * 10,
+    dead: false, koTime: 0, attackCD: isButton ? 0.78 + Math.random() * 0.12 : 1.1 + Math.random() * 0.35,
+    skillCD: isButton
+      ? [1.9 + Math.random() * 0.4, 4.2 + Math.random() * 0.4, 6.8 + Math.random() * 0.4, 14.5 + Math.random()]
+      : [2.4 + Math.random() * 0.6, 4.8 + Math.random() * 0.7, 7.0 + Math.random() * 0.8, 14.5 + Math.random()],
     contactCD: 0.45, hitFlash: 0, invuln: 0, stun: 0, burn: 0, rooted: 0, slow: 0,
     energy: 0, lastDir: player.team % 2 === 0 ? 1 : -1,
-    melee, attackStyle: RANGED_VISUALS[player.fighterId] || 'starbolt',
-    passiveTicks: 0, projectileCount: 0, markTarget: 0, dash: 0
+    melee, attackStyle: isButton ? 'button' : (RANGED_VISUALS[player.fighterId] || 'starbolt'),
+    passiveTicks: 0, projectileCount: 0, markTarget: 0, dash: 0,
+    ...(isButton ? {
+      btLone: 0, btWatch: 0, btHitSrc: null, btHitD: 0, btHitT: -99, btLoneCD: 0,
+      btCtr: 0, btCounter: null, btCast: 0, btUlt: 0, btUltAge: 0, btUltMax: 6.6,
+      btUltPower: 1, btUltPins: null, btUltTick: 0, btUltBurstDone: false,
+      btSmile: 1, btSmileT: 1, btSeed: Math.random() * 50, btAx: 0, btAy: 0,
+      btPinX: pos.x, btPinY: pos.y, btStitch: null, btDecoy: null
+    } : {})
   };
 }
 function makeRoom(players, mode) {
@@ -267,6 +277,19 @@ function enqueue(player, mode, fighterId) {
 function dealDamage(room, target, rawDamage, source, reason = 'projectile') {
   if (!target || target.dead || target.invuln > 0) return 0;
   if (source && !isEnemy(source, target, room)) return 0;
+  if (target.id === 'button') {
+    // V45 Button's offline hurt wrapper reduces incoming damage by 6%, or 60% during its ultimate.
+    rawDamage *= target.btUlt > 0 ? 0.4 : 0.94;
+    if (source && isEnemy(source, target, room) && !['burn', 'passive', 'button_passive', 'button_counter'].includes(reason)) {
+      const d = Math.hypot(source.x - target.x, source.y - target.y);
+      target.btWatch = 2.4; target.btHitSrc = source.uid; target.btHitD = d; target.btHitT = room.sim.elapsed;
+      if (!(target.btCtr > 0) && !(target.btUlt > 0) && d < 150 && reason !== 'ultimate') {
+        target.btCtr = 1.6;
+        target.btCounter = { targetUid: source.uid, x2: source.x, y2: source.y, dueAt: room.sim.elapsed + 0.05, done: false };
+        emitEvent(room, 'button_fx', { ownerUid: target.uid, targetUid: source.uid, fx: 'counter_start', x: target.x, y: target.y, targetX: source.x, targetY: source.y });
+      }
+    }
+  }
   let damage = Math.max(0, rawDamage);
   if (target.id === 'blackhole') damage *= 0.9;
   if (target.id === 'quasar' && target.shield > 0) damage *= 0.92;
@@ -342,6 +365,228 @@ function directStrike(room, source, target, skillIndex = null) {
     y: (source.y + target.y) / 2, skillIndex
   });
 }
+function buttonSpend(room, f) {
+  const loneliness = f.btLone || 0;
+  f.btLone = 0;
+  const power = 1 + loneliness / 100 * 0.6;
+  if (loneliness >= 20) emitEvent(room, 'button_fx', { ownerUid: f.uid, fx: 'loneliness_spent', x: f.x, y: f.y, loneliness, power });
+  return power;
+}
+function buttonDeal(room, target, raw, source, reason) {
+  // Offline hurt() scales raw attacks by 0.68 before applying defenses.
+  return dealDamage(room, target, raw * 0.68, source, reason);
+}
+function buttonEmitSkill(room, f, target, index, payload = {}) {
+  const names = ['btS0', 'btS1', 'btS2', 'btS3'];
+  emitEvent(room, 'button_ability', {
+    ownerUid: f.uid, targetUid: target?.uid || null, skillIndex: index, ability: names[index],
+    x: f.x, y: f.y, targetX: target?.x, targetY: target?.y, ...payload
+  });
+}
+function buttonRangedAttack(room, f, target) {
+  const dx = target.x - f.x, dy = target.y - f.y, d = Math.hypot(dx, dy) || 1;
+  const angle = Math.atan2(dy, dx), speed = 312 + Math.random() * 36;
+  const proj = {
+    uid: crypto.randomUUID(), owner: f.uid, target: target.uid,
+    x: f.x + dx / d * (f.r + 5), y: f.y + dy / d * (f.r + 5),
+    vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, r: 5,
+    damage: 3.2 * 0.68, age: 0, life: 1.7, type: 'button', s: 'button', rot: angle,
+    skillIndex: null, team: f.team, trail: []
+  };
+  room.sim.projectiles.push(proj);
+  emitEvent(room, 'attack', { ownerUid: f.uid, targetUid: target.uid, x: f.x, y: f.y, targetX: target.x, targetY: target.y, projectileType: 'button' });
+}
+function buttonBasicAttack(room, f, target, distance) {
+  if (f.dead || target.dead || f.attackCD > 0 || f.btUlt > 0) return;
+  f.attackCD = 0.78 + (Math.random() * 0.14 - 0.06);
+  f.btCast = Math.max(f.btCast || 0, 0.22);
+  const angle = Math.atan2(target.y - f.y, target.x - f.x);
+  if (distance < 120) {
+    emitEvent(room, 'button_ability', { ownerUid: f.uid, targetUid: target.uid, ability: 'btpoke', x: f.x, y: f.y, angle, range: f.r + 58 });
+    for (const foe of room.sim.fighters) {
+      if (!isEnemy(f, foe, room)) continue;
+      const d = Math.hypot(foe.x - f.x, foe.y - f.y);
+      const a = Math.atan2(foe.y - f.y, foe.x - f.x) - angle;
+      const da = Math.atan2(Math.sin(a), Math.cos(a));
+      if (d >= f.r + 58 + foe.r || Math.abs(da) > 0.85) continue;
+      buttonDeal(room, foe, 3.8, f, 'button_basic');
+      foe.slow = Math.max(foe.slow || 0, 0.5);
+      foe.vx += Math.cos(angle) * 60; foe.vy += Math.sin(angle) * 60;
+    }
+  } else {
+    buttonRangedAttack(room, f, target);
+  }
+}
+function castButtonSkill(room, f, target, index) {
+  if (!target || target.dead || f.dead || f.btUlt > 0) return;
+  const cooldownBase = [3.4, 6.2, 7.4, 16][index];
+  f.skillCD[index] = cooldownBase * (index === 3 ? 1.30 : 1.16) + (index === 3 ? 0 : (Math.random() * 0.24 - 0.12));
+  const power = buttonSpend(room, f);
+  f.btCast = index === 0 ? 0.4 : index === 1 ? 0.45 : index === 2 ? 0.35 : 0;
+  if (index === 0) {
+    const px = clamp(target.x + target.vx * 0.22, ARENA.x + 26, ARENA.x + ARENA.w - 26);
+    const py = clamp(target.y + target.vy * 0.22, ARENA.y + 26, ARENA.y + ARENA.h - 26);
+    const dx = px - f.x, dy = py - f.y, d = Math.hypot(dx, dy) || 1;
+    const length = Math.min(470, d + 70), ux = dx / d, uy = dy / d;
+    const x2 = f.x + ux * length, y2 = f.y + uy * length;
+    buttonEmitSkill(room, f, target, index, { targetX: x2, targetY: y2, power });
+    for (const foe of room.sim.fighters) {
+      if (!isEnemy(f, foe, room)) continue;
+      const sx = x2 - f.x, sy = y2 - f.y;
+      const u = clamp(((foe.x - f.x) * sx + (foe.y - f.y) * sy) / (sx * sx + sy * sy || 1), 0, 1);
+      if (Math.hypot(foe.x - f.x - sx * u, foe.y - f.y - sy * u) >= 20 + foe.r) continue;
+      buttonDeal(room, foe, 6 * power, f, 'button_snare');
+      foe.slow = Math.max(foe.slow || 0, 2.6 * power);
+      foe.rooted = Math.max(foe.rooted || 0, 0.45 * power);
+      emitEvent(room, 'button_fx', { ownerUid: f.uid, targetUid: foe.uid, fx: 'snared', x: foe.x, y: foe.y });
+    }
+  } else if (index === 1) {
+    const d = Math.hypot(target.x - f.x, target.y - f.y);
+    const maxDistance = clamp(d + 85, 175, 310);
+    f.btStitch = { targetUid: target.uid, maxDistance, damage: 26 * power * 0.68, stun: 0.7, expiresAt: room.sim.elapsed + 7.5, power, snapped: false };
+    buttonEmitSkill(room, f, target, index, { maxDistance, power, duration: 7.5 });
+    emitEvent(room, 'button_fx', { ownerUid: f.uid, targetUid: target.uid, fx: 'stitched', x: target.x, y: target.y, maxDistance });
+  } else if (index === 2) {
+    f.btDecoy = { x: f.x, y: f.y, radius: 20, expiresAt: room.sim.elapsed + 7, power, triggered: false };
+    const away = Math.atan2(f.y - target.y, f.x - target.x) + (Math.random() * 0.8 - 0.4);
+    f.vx = Math.cos(away) * 540; f.vy = Math.sin(away) * 540; f.dash = 0.38;
+    f.invuln = Math.max(f.invuln || 0, 0.4);
+    buttonEmitSkill(room, f, target, index, { power, duration: 7, decoyX: f.x, decoyY: f.y });
+  } else {
+    f.btUlt = 6.6; f.btUltAge = 0; f.btUltMax = 6.6; f.btUltPower = power;
+    f.btPinX = f.x; f.btPinY = f.y; f.btUltPins = null; f.btUltTick = 0; f.btUltBurstDone = false;
+    f.btSmileT = 0; f.vx = 0; f.vy = 0; f.invuln = Math.max(f.invuln || 0, 0.5);
+    buttonEmitSkill(room, f, target, index, { power, duration: 6.6 });
+  }
+}
+function buttonTriggerDecoy(room, owner, reason, triggerUid = null) {
+  const decoy = owner?.btDecoy;
+  if (!owner || !decoy || decoy.triggered) return;
+  decoy.triggered = true;
+  for (const foe of room.sim.fighters) {
+    if (!isEnemy(owner, foe, room) || Math.hypot(foe.x - decoy.x, foe.y - decoy.y) > 150 + foe.r) continue;
+    buttonDeal(room, foe, 20 * decoy.power, owner, 'button_decoy');
+    const a = Math.atan2(foe.y - decoy.y, foe.x - decoy.x);
+    foe.vx += Math.cos(a) * 250; foe.vy += Math.sin(a) * 250;
+    foe.stun = Math.max(foe.stun || 0, 0.4); foe.slow = Math.max(foe.slow || 0, 1.4);
+  }
+  emitEvent(room, 'button_fx', { ownerUid: owner.uid, targetUid: triggerUid, fx: 'decoy_boom', reason, x: decoy.x, y: decoy.y, power: decoy.power });
+  owner.btDecoy = null;
+}
+function stepButton(room, f, target, distance, dt) {
+  for (const key of ['btCast', 'btUlt', 'btCtr', 'btLoneCD', 'btWatch']) f[key] = Math.max(0, (f[key] || 0) - dt);
+  f.btSmile = (f.btSmile == null ? 1 : f.btSmile) + ((f.btSmileT ?? 1) - (f.btSmile == null ? 1 : f.btSmile)) * Math.min(1, dt * ((f.btSmileT ?? 1) < (f.btSmile ?? 1) ? 1.5 : 4));
+  if (target) {
+    const a = Math.atan2(target.y - f.y, target.x - f.x);
+    f.btAx += (Math.cos(a) * 0.8 - (f.btAx || 0)) * Math.min(1, dt * 6);
+    f.btAy += (Math.sin(a) * 0.6 - (f.btAy || 0)) * Math.min(1, dt * 6);
+  }
+  if ((f.btWatch || 0) > 0) {
+    const hitter = room.sim.fighters.find(q => q.uid === f.btHitSrc);
+    if (!hitter || hitter.dead) f.btWatch = 0;
+    else if (Math.hypot(hitter.x - f.x, hitter.y - f.y) > (f.btHitD || 0) + 75 && !(f.btLoneCD > 0)) {
+      f.btWatch = 0; f.btLoneCD = 0.8; f.btLone = Math.min(100, (f.btLone || 0) + 14);
+      emitEvent(room, 'button_fx', { ownerUid: f.uid, fx: 'lone_gain', x: f.x, y: f.y, loneliness: f.btLone });
+    }
+  }
+  if (f.btUlt > 0) {
+    f.btUltAge += dt;
+    f.x = f.btPinX; f.y = f.btPinY; f.vx *= 0.2; f.vy *= 0.2;
+    for (let i = 0; i < 3; i++) f.skillCD[i] = Math.max(f.skillCD[i], 0.5);
+    f.attackCD = Math.max(f.attackCD, 0.3);
+    return;
+  }
+  // Original offline order checks ready skills before the basic attack.
+  for (let i = 0; i < f.skillCD.length; i++) {
+    f.skillCD[i] -= dt;
+    if (f.skillCD[i] <= 0) { castButtonSkill(room, f, target, i); break; }
+  }
+  if (f.btUlt <= 0) buttonBasicAttack(room, f, target, distance);
+}
+function stepButtonPost(room, f, dt) {
+  if (f.id !== 'button' || f.dead) return;
+  // Counter-thread lashes after the brief wind-up; gameplay is decided here, visuals are an event.
+  if (f.btCounter && !f.btCounter.done && room.sim.elapsed >= f.btCounter.dueAt) {
+    const counter = f.btCounter; counter.done = true;
+    const foe = room.sim.fighters.find(q => q.uid === counter.targetUid);
+    if (foe && isEnemy(f, foe, room)) {
+      const sx = f.x, sy = f.y, ex = counter.x2, ey = counter.y2;
+      const vx = ex - sx, vy = ey - sy, u = clamp(((foe.x - sx) * vx + (foe.y - sy) * vy) / (vx * vx + vy * vy || 1), 0, 1);
+      if (Math.hypot(foe.x - sx - vx * u, foe.y - sy - vy * u) < 16 + foe.r) {
+        buttonDeal(room, foe, 3.4, f, 'button_passive'); foe.slow = Math.max(foe.slow || 0, 1);
+      }
+      emitEvent(room, 'button_fx', { ownerUid: f.uid, targetUid: foe.uid, fx: 'counter_snap', x: f.x, y: f.y, targetX: counter.x2, targetY: counter.y2 });
+    }
+    f.btCounter = null;
+  }
+  // Sewn Together remains active until the target escapes the tether distance or it expires.
+  if (f.btStitch) {
+    const st = f.btStitch, foe = room.sim.fighters.find(q => q.uid === st.targetUid);
+    if (!foe || foe.dead || room.sim.elapsed >= st.expiresAt) {
+      f.btStitch = null;
+      emitEvent(room, 'button_fx', { ownerUid: f.uid, targetUid: st.targetUid, fx: 'stitch_end', x: f.x, y: f.y });
+    } else if (!st.snapped && Math.hypot(foe.x - f.x, foe.y - f.y) > st.maxDistance) {
+      st.snapped = true;
+      buttonDeal(room, foe, st.damage, f, 'button_stitch'); foe.stun = Math.max(foe.stun || 0, st.stun);
+      const a = Math.atan2(foe.y - f.y, foe.x - f.x); foe.vx -= Math.cos(a) * 140; foe.vy -= Math.sin(a) * 140;
+      emitEvent(room, 'button_fx', { ownerUid: f.uid, targetUid: foe.uid, fx: 'stitch_snap', x: foe.x, y: foe.y, power: st.power });
+      f.btStitch = null;
+    }
+  }
+  // Decoy triggers on an enemy collision or a hostile projectile passing through it.
+  if (f.btDecoy && !f.btDecoy.triggered) {
+    if (room.sim.elapsed >= f.btDecoy.expiresAt) f.btDecoy = null;
+    else {
+      const d = f.btDecoy;
+      const foe = room.sim.fighters.find(q => isEnemy(f, q, room) && Math.hypot(q.x - d.x, q.y - d.y) < d.radius + q.r + 4);
+      if (foe) buttonTriggerDecoy(room, f, 'fighter', foe.uid);
+      else {
+        const p = room.sim.projectiles.find(q => {
+          const shooter = room.sim.fighters.find(x => x.uid === q.owner);
+          return shooter && isEnemy(f, shooter, room) && Math.hypot(q.x - d.x, q.y - d.y) < d.radius + (q.r || 5) + 4;
+        });
+        if (p) { room.sim.projectiles = room.sim.projectiles.filter(q => q !== p); buttonTriggerDecoy(room, f, 'projectile', p.owner); }
+      }
+    }
+  }
+  // Ultimate: delayed capture, repeated tick damage, then the dollhouse shockwave.
+  if (f.btUlt > 0) {
+    f.x = f.btPinX; f.y = f.btPinY; f.vx *= 0.2; f.vy *= 0.2;
+    const age = f.btUltAge, foes = room.sim.fighters.filter(q => isEnemy(f, q, room));
+    if (age >= 1.7 && !f.btUltPins && !f.btUltBurstDone) {
+      f.btUltPins = Object.fromEntries(foes.map(q => [q.uid, { x: q.x, y: q.y }]));
+      f.btUltTick = 0;
+      emitEvent(room, 'button_fx', { ownerUid: f.uid, fx: 'ult_capture', x: f.x, y: f.y, power: f.btUltPower });
+    }
+    if (f.btUltPins && age < 4.95) {
+      f.btUltTick -= dt;
+      if (f.btUltTick <= 0) {
+        f.btUltTick = 0.5;
+        for (const q of foes) buttonDeal(room, q, 5 * f.btUltPower, f, 'button_ultimate_tick');
+      }
+      for (const q of foes) {
+        const pin = f.btUltPins[q.uid] || (f.btUltPins[q.uid] = { x: q.x, y: q.y });
+        const pull = Math.max(0, Math.min(1, (age - 1.7) / 2.4));
+        q.x = clamp(pin.x, ARENA.x + q.r, ARENA.x + ARENA.w - q.r);
+        q.y = clamp(pin.y - pull * 26, ARENA.y + q.r, ARENA.y + ARENA.h - q.r);
+        q.vx *= 0.3; q.vy *= 0.3; q.slow = Math.max(q.slow || 0, 0.3);
+      }
+    }
+    if (age >= 4.95 && !f.btUltBurstDone) {
+      f.btUltBurstDone = true; f.btUltPins = null;
+      for (const q of foes) {
+        buttonDeal(room, q, 110 * f.btUltPower, f, 'button_ultimate');
+        const a = Math.atan2(q.y - f.y, q.x - f.x); q.vx += Math.cos(a) * 420; q.vy += Math.sin(a) * 420; q.stun = Math.max(q.stun || 0, 1.1);
+        emitEvent(room, 'button_fx', { ownerUid: f.uid, targetUid: q.uid, fx: 'ult_shock', x: q.x, y: q.y, power: f.btUltPower });
+        buttonDeal(room, q, 60 * f.btUltPower, f, 'button_ultimate');
+        q.vx += Math.cos(a) * 300; q.vy += Math.sin(a) * 300; q.stun = Math.max(q.stun || 0, 0.6);
+      }
+      f.hp = Math.min(f.maxHp, f.hp + 16); f.shield = Math.min(26, f.shield + 10); f.btSmileT = 1;
+      emitEvent(room, 'button_fx', { ownerUid: f.uid, fx: 'ult_final', x: f.x, y: f.y, power: f.btUltPower });
+    }
+  }
+}
+
 function stepFighter(room, f, dt) {
   if (f.dead) { f.koTime += dt; return; }
   f.age += dt; f.anim += dt * 5;
@@ -357,6 +602,7 @@ function stepFighter(room, f, dt) {
   f.shield = Math.max(0, f.shield - dt * 2.2);
   if (f.hp < f.maxHp) f.hp = Math.min(f.maxHp, f.hp + dt * 0.18);
   const mult = f.stun > 0 ? 0.2 : f.rooted > 0 ? 0.4 : f.slow > 0 ? 0.68 : 1;
+  f.dash = Math.max(0, (f.dash || 0) - dt);
   f.x += f.vx * dt * mult; f.y += f.vy * dt * mult;
   const left = ARENA.x + f.r, right = ARENA.x + ARENA.w - f.r;
   const top = ARENA.y + f.r, bottom = ARENA.y + ARENA.h - f.r;
@@ -366,11 +612,17 @@ function stepFighter(room, f, dt) {
   else if (f.y > bottom) { f.y = bottom; f.vy = -Math.abs(f.vy) * 0.985; }
   const speed = Math.hypot(f.vx, f.vy);
   if (speed < 82) { const a = Math.atan2(f.vy || seededJitter(), f.vx || seededJitter()); f.vx = Math.cos(a) * 90; f.vy = Math.sin(a) * 90; }
-  if (speed > 225) { f.vx = f.vx / speed * 225; f.vy = f.vy / speed * 225; }
+  const speedCap = f.dash > 0 ? 560 : 225;
+  if (speed > speedCap) { f.vx = f.vx / speed * speedCap; f.vy = f.vy / speed * speedCap; }
 
   const nearest = nearestEnemy(f, room);
   if (!nearest) return;
   const target = nearest.fighter, distance = nearest.distance;
+  if (f.id === 'button') {
+    stepButton(room, f, target, distance, dt);
+    capTeamShield(f);
+    return;
+  }
   // Attacks are automatic and server-timed; client frame-rate cannot affect them.
   if (f.attackCD <= 0) {
     f.attackCD = (f.melee ? 1.0 : 1.25) + Math.random() * 0.22;
@@ -486,14 +738,20 @@ function publicFighter(f) {
     hp: f.hp, maxHp: f.maxHp, shield: f.shield, age: f.age, anim: f.anim,
     dead: f.dead, koTime: f.koTime, attackCD: f.attackCD, hitFlash: f.hitFlash,
     invuln: f.invuln, stun: f.stun, slow: f.slow, rooted: f.rooted,
-    energy: f.energy, lastDir: f.lastDir, markTarget: f.markTarget
+    energy: f.energy, lastDir: f.lastDir, markTarget: f.markTarget,
+    ...(f.id === 'button' ? {
+      btLone: f.btLone, btWatch: f.btWatch, btHitSrc: f.btHitSrc, btHitD: f.btHitD,
+      btHitT: f.btHitT, btLoneCD: f.btLoneCD, btCtr: f.btCtr, btCast: f.btCast,
+      btUlt: f.btUlt, btUltMax: f.btUltMax, btSmile: f.btSmile, btSmileT: f.btSmileT,
+      btSeed: f.btSeed, btAx: f.btAx, btAy: f.btAy, btPinX: f.btPinX, btPinY: f.btPinY
+    } : {})
   };
 }
 function publicProjectile(p) {
   return {
     uid: p.uid, owner: p.owner, target: p.target, x: p.x, y: p.y,
     vx: p.vx, vy: p.vy, r: p.r, damage: p.damage, age: p.age, life: p.life,
-    type: p.type, rot: p.rot, skillIndex: p.skillIndex, trail: p.trail.slice(-6)
+    type: p.type, s: p.s, rot: p.rot, skillIndex: p.skillIndex, trail: p.trail.slice(-6)
   };
 }
 function broadcastSnapshot(room, force = false) {
@@ -516,6 +774,7 @@ function tickRoom(room, dt) {
   room.sim.events = [];
   room.sim.elapsed += dt;
   for (const fighter of room.sim.fighters) stepFighter(room, fighter, dt);
+  for (const fighter of room.sim.fighters) stepButtonPost(room, fighter, dt);
   stepCollisions(room);
   stepProjectiles(room, dt);
 
