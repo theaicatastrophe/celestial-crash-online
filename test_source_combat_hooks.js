@@ -1,0 +1,33 @@
+'use strict';
+const assert = require('node:assert/strict');
+const { applyV45DamageHooks, applyV45OnHit } = require('./source_combat_hooks');
+function fighter(id, extra = {}) { return { id, uid: id, x: 0, y: 0, hp: 100, maxHp: 100, shield: 0, passiveTicks: 0, ...extra }; }
+function run() { return applyV45DamageHooks({ room: { sim: { fighters: [] } }, target: fighter('dummy'), source: null, reason: 'projectile', damage: 10 }); }
+let r = applyV45DamageHooks({ room:{sim:{fighters:[]}}, target:fighter('aries',{dash:1}), source:null, reason:'projectile', damage:10 });
+assert.equal(r.damage,6,'Aries takes 40% less damage while dashing');
+r = applyV45DamageHooks({ room:{sim:{fighters:[]}}, target:fighter('libra'), source:null, reason:'projectile', damage:21 });
+assert.equal(r.damage,15,'Libra caps heavy hits using the original 11 + 40% overflow rule');
+r = applyV45DamageHooks({ room:{sim:{fighters:[]}}, target:fighter('pisces'), source:null, reason:'projectile', damage:10, random:()=>0.01, emit:()=>{} });
+assert.equal(r.dodged,true,'Pisces 2% passive dodge can avoid a hit');
+const taurus=fighter('taurus',{passiveTicks:4,shield:0});
+r = applyV45DamageHooks({ room:{sim:{fighters:[]}}, target:taurus, source:null, reason:'projectile', damage:10 });
+assert.equal(taurus.shield,8,'Taurus gains 8 shield on every fifth passive tick');
+assert.equal(r.damage,8.8,'Taurus incoming damage reduction applies');
+const twinOwner=fighter('gemini');
+r = applyV45DamageHooks({ room:{sim:{fighters:[twinOwner,{id:'gemini',uid:'twin',twin:true,mast:'gemini',dead:false}] }}, target:twinOwner, source:null, reason:'projectile', damage:10 });
+assert.equal(r.damage,8.8,'Gemini receives reduced damage while its twin is alive');
+const scorpio=fighter('scorpio',{hp:30});const tgt=fighter('dummy');
+r = applyV45DamageHooks({ room:{sim:{fighters:[]}}, target:tgt, source:scorpio, reason:'projectile', damage:10 });
+assert.equal(r.damage,10,'Scorpio preserves baseline hit damage');
+assert.equal(tgt.burn,2.2,'Scorpio applies source-defined burn');
+assert.equal(tgt.burnSource,'scorpio','Scorpio burn is attributed to its source');
+const mars=fighter('mars',{hp:40});
+r = applyV45DamageHooks({ room:{sim:{fighters:[]}}, target:fighter('dummy'), source:mars, reason:'projectile', damage:10 });
+assert.equal(r.damage,11.5,'Mars gains its low-health damage bonus');
+const uranus=fighter('uranus');const slowTarget=fighter('dummy');
+applyV45OnHit({target:slowTarget,source:uranus,reason:'projectile'});
+assert.equal(slowTarget.slow,0.5,'Uranus applies its source-defined slow on hit');
+const cinder=fighter('cinder');
+applyV45OnHit({target:slowTarget,source:cinder,reason:'projectile'});
+assert.equal(slowTarget.burn,1.2,'Cinder applies its source-defined burn');
+console.log('ALL V45 SHARED COMBAT PASSIVE TESTS PASSED');

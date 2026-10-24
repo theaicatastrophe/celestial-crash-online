@@ -1,22 +1,18 @@
-# Celestial Crash Online MVP — WebSocket protocol
+# Celestial Crash Online — Protocol & Limits
 
-Connect to `wss://YOUR-SERVICE.onrender.com/ws`.
+The WebSocket protocol remains compatible with the existing online client: `connected`, `find_match`, `queue_status`, `match_found`, `battle_ready`, `battle_snapshot`, `match_result`, `leave_room`, `cancel_queue`, and `error` messages are preserved. Clients select characters and render snapshots; they cannot submit authoritative battle snapshots or results.
 
-## Server messages
-- `connected`: server-assigned temporary player ID and protocol version.
-- `queue_status`: `{ queued, position? }`.
-- `match_found`: room ID, this player's ID, opponent ID, seed, and phase.
-- `fighter_selected`: player ID, selected fighter ID, and opponent fighter ID (or null).
-- `player_ready`: player ID and ready state.
-- `battle_ready`: both fighter IDs and a shared seed. This is a lobby handshake only; it does not yet run or adjudicate the actual game battle.
-- `opponent_left`, `left_room`, `pong`, `error`.
+## Server simulation
 
-## Client messages
-- `{ "type": "find_match" }`
-- `{ "type": "cancel_queue" }`
-- `{ "type": "select_fighter", "fighterId": "existing-game-character-id" }`
-- `{ "type": "set_ready", "ready": true }`
-- `{ "type": "leave_room" }`
-- `{ "type": "ping" }`
+The Node server runs movement, attack/skill cooldowns, source-defined V45 ability handlers, projectile collision/homing/piercing, delayed ability actions, persistent effects, summons, damage, shields, healing, knockout, and match results. Button continues to use its bespoke server-side implementation. The V45 source handler catalog maps 60 roster entries/variants and 252 unique skill handler names.
 
-Temporary player IDs reset when a connection ends. Do not use them as account identities or ranked identities. Character IDs are only shape-checked in this first step; account ownership enforcement is not implemented yet. Do not award rank from client-submitted results. Ranked play must wait until the existing battle simulation is integrated with trusted server-side result calculation and authenticated persistent accounts.
+## Limits
+
+- Ranked queues are not rated and do not persist MMR or leaderboard history.
+- Verified user identities, reconnect recovery, and production-grade anti-cheat are not included.
+- Visual and audio-only source functionality is adapted to server-safe events; it is not a complete browser-renderer port.
+- Handler smoke tests cover every non-Button catalog tuple and five seconds of delayed/effect stepping per skill cast, but cannot prove full parity over every battle, map state, or rare interaction.
+- Keep the existing working deployment commit so it can be restored if an integration issue appears.
+
+
+The full-roster mechanics package adds `source_ability_engine.js`, `source_combat_hooks.js`, and `source_skill_catalog.json` as required server-root runtime files. Keep the existing WebSocket message schema unchanged when deploying.

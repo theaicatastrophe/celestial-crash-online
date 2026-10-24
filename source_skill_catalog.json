@@ -1,0 +1,3014 @@
+{
+  "catalogVersion": "source-skill-metadata-v1",
+  "sourceFile": "CelestialCrash_Button_V45_Cute.html",
+  "sourceSha256": "ed76d5f772e62733c5b7b31a0cd77bc60e6bca662cfa2aa93c2a54c5be67f698",
+  "extractionMethod": "Captured source-defined skill tuples [name, description, handler key, base cooldown] and matched them to the parity matrix; special multi-kit characters retain their source variants.",
+  "importantTimingNote": "declaredBaseCooldown is the value in source skill metadata. The offline cast path applies per-skill timing wrappers: regular skills generally use base*1.16 plus small jitter; ultimates are later re-armed to max(7.5, base*0.58). Character-specific wrappers may alter final behavior. This catalog does not claim that the server reproduces all of those wrappers.",
+  "sourceSkillTupleCount": 264,
+  "fighterCount": 60,
+  "fighters": [
+    {
+      "id": "blackhole",
+      "name": "Black Hole",
+      "group": "Cosmic core",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Gravitational Well",
+              "description": "A denser singularity tugs enemies inward and repeatedly crushes them.",
+              "handler": "well",
+              "declaredBaseCooldown": 4.4,
+              "sourceLine": 769
+            },
+            {
+              "name": "Lens Breaker",
+              "description": "A sharpened ray of bent spacetime pierces the target.",
+              "handler": "lensbeam",
+              "declaredBaseCooldown": 4.9,
+              "sourceLine": 769
+            },
+            {
+              "name": "Accretion Guard",
+              "description": "Condenses orbiting matter into a reinforced dark shield.",
+              "handler": "shield",
+              "declaredBaseCooldown": 6.8,
+              "sourceLine": 769
+            },
+            {
+              "name": "EVENT HORIZON",
+              "description": "A colossal singularity pulls, bends, and crushes the entire arena.",
+              "handler": "horizon",
+              "declaredBaseCooldown": 14.0,
+              "sourceLine": 769
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        4.4,
+        4.9,
+        6.8,
+        14.0
+      ],
+      "serverSourceStatus": "source metadata mapped; online behavior still needs bespoke implementation"
+    },
+    {
+      "id": "solarflare",
+      "name": "Solarflare",
+      "group": "Cosmic core",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Sunshot",
+              "description": "Launches a blazing star projectile.",
+              "handler": "sunshot",
+              "declaredBaseCooldown": 3.7,
+              "sourceLine": 770
+            },
+            {
+              "name": "Flare Orbit",
+              "description": "Ignites a ring of orbiting solar sparks.",
+              "handler": "flareorbit",
+              "declaredBaseCooldown": 5.3,
+              "sourceLine": 770
+            },
+            {
+              "name": "Prominence Wave",
+              "description": "Sends a hot shockwave through nearby space.",
+              "handler": "prominence",
+              "declaredBaseCooldown": 6.4,
+              "sourceLine": 770
+            },
+            {
+              "name": "SUPERNOVA",
+              "description": "Detonates in a screen-filling stellar blast.",
+              "handler": "supernova",
+              "declaredBaseCooldown": 15.2,
+              "sourceLine": 770
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        3.7,
+        5.3,
+        6.4,
+        15.2
+      ],
+      "serverSourceStatus": "source metadata mapped; online behavior still needs bespoke implementation"
+    },
+    {
+      "id": "photon",
+      "name": "Photon Duelist",
+      "group": "Cosmic core",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Lightstep Dash",
+              "description": "A blue-white prism flash strikes toward the rival.",
+              "handler": "lightdash",
+              "declaredBaseCooldown": 3.3,
+              "sourceLine": 771
+            },
+            {
+              "name": "Prism Ricochet",
+              "description": "Fires a shard that ricochets in a flare.",
+              "handler": "prism",
+              "declaredBaseCooldown": 4.7,
+              "sourceLine": 771
+            },
+            {
+              "name": "Photon Edge",
+              "description": "Carves a brilliant arc-shaped blade strike.",
+              "handler": "photonedge",
+              "declaredBaseCooldown": 5.9,
+              "sourceLine": 771
+            },
+            {
+              "name": "LIGHTSPEED BREAK",
+              "description": "Unleashes a radiant multi-hit line across the arena.",
+              "handler": "lightspeed",
+              "declaredBaseCooldown": 13.9,
+              "sourceLine": 771
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        3.3,
+        4.7,
+        5.9,
+        13.9
+      ],
+      "serverSourceStatus": "source metadata mapped; online behavior still needs bespoke implementation"
+    },
+    {
+      "id": "nebula",
+      "name": "Nebula Witch",
+      "group": "Cosmic core",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Nebula Bloom",
+              "description": "Leaves a pulsing cloud of cosmic mist.",
+              "handler": "cloud",
+              "declaredBaseCooldown": 4.8,
+              "sourceLine": 772
+            },
+            {
+              "name": "Mirror Wisp",
+              "description": "Creates violet afterimages and phases through a hit.",
+              "handler": "wisp",
+              "declaredBaseCooldown": 5.4,
+              "sourceLine": 772
+            },
+            {
+              "name": "Star Spores",
+              "description": "Scatters a volley of drifting stellar spores.",
+              "handler": "spores",
+              "declaredBaseCooldown": 4.5,
+              "sourceLine": 772
+            },
+            {
+              "name": "DREAM COLLAPSE",
+              "description": "Unleashes a vast purple nebula eruption.",
+              "handler": "dreamcollapse",
+              "declaredBaseCooldown": 14.6,
+              "sourceLine": 772
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        4.8,
+        5.4,
+        4.5,
+        14.6
+      ],
+      "serverSourceStatus": "source metadata mapped; online behavior still needs bespoke implementation"
+    },
+    {
+      "id": "comet",
+      "name": "Comet Breaker",
+      "group": "Cosmic core",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Comet Charge",
+              "description": "A living-meteor impact burst erupts near the rival.",
+              "handler": "charge",
+              "declaredBaseCooldown": 3.9,
+              "sourceLine": 773
+            },
+            {
+              "name": "Meteor Call",
+              "description": "Calls down a homing meteor impact.",
+              "handler": "meteor",
+              "declaredBaseCooldown": 5.4,
+              "sourceLine": 773
+            },
+            {
+              "name": "Impact Crater",
+              "description": "Smashes the floor with a fiery radial burst.",
+              "handler": "crater",
+              "declaredBaseCooldown": 6.4,
+              "sourceLine": 773
+            },
+            {
+              "name": "COMET STORM",
+              "description": "A chain of meteors crashes down around the target.",
+              "handler": "cometstorm",
+              "declaredBaseCooldown": 15.5,
+              "sourceLine": 773
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        3.9,
+        5.4,
+        6.4,
+        15.5
+      ],
+      "serverSourceStatus": "source metadata mapped; online behavior still needs bespoke implementation"
+    },
+    {
+      "id": "chrono",
+      "name": "Chrono Warden",
+      "group": "Cosmic core",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Time Dilation",
+              "description": "Creates a clock field that slows and ticks on the rival.",
+              "handler": "dilation",
+              "declaredBaseCooldown": 5.0,
+              "sourceLine": 774
+            },
+            {
+              "name": "REWIND PROTOCOL",
+              "description": "Reverses his path by a few seconds, restores past health, and freezes the rival.",
+              "handler": "rewind",
+              "declaredBaseCooldown": 9.0,
+              "sourceLine": 774
+            },
+            {
+              "name": "TIME STOP · NEGATIVE FRAME",
+              "description": "Freezes the battlefield. Chrono alone can move while reality turns inside out.",
+              "handler": "timestop",
+              "declaredBaseCooldown": 13.0,
+              "sourceLine": 774
+            },
+            {
+              "name": "TIME FRACTURE",
+              "description": "Freezes the moment, then releases a temporal rupture.",
+              "handler": "timefracture",
+              "declaredBaseCooldown": 15.0,
+              "sourceLine": 774
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        5.0,
+        9.0,
+        13.0,
+        15.0
+      ],
+      "serverSourceStatus": "source metadata mapped; online behavior still needs bespoke implementation"
+    },
+    {
+      "id": "lunar",
+      "name": "Lunar Reaper",
+      "group": "Cosmic core",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Crescent Return",
+              "description": "Throws a curved moon blade that comes back around.",
+              "handler": "crescent",
+              "declaredBaseCooldown": 4.4,
+              "sourceLine": 775
+            },
+            {
+              "name": "Eclipse Kiss",
+              "description": "A dark eclipse siphons vitality from close range.",
+              "handler": "eclipsekiss",
+              "declaredBaseCooldown": 5.8,
+              "sourceLine": 775
+            },
+            {
+              "name": "Moonshard Rain",
+              "description": "Hurls pale shards in a crescent-shaped volley.",
+              "handler": "moonshards",
+              "declaredBaseCooldown": 4.6,
+              "sourceLine": 775
+            },
+            {
+              "name": "TOTAL ECLIPSE",
+              "description": "A huge black moon crescent swallows the arena light.",
+              "handler": "totaleclipse",
+              "declaredBaseCooldown": 15.2,
+              "sourceLine": 775
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        4.4,
+        5.8,
+        4.6,
+        15.2
+      ],
+      "serverSourceStatus": "source metadata mapped; online behavior still needs bespoke implementation"
+    },
+    {
+      "id": "quasar",
+      "name": "Quasar Oracle",
+      "group": "Cosmic core",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Quasar Lance",
+              "description": "Snipes the opponent with an ultra-bright beam.",
+              "handler": "lance",
+              "declaredBaseCooldown": 4.2,
+              "sourceLine": 776
+            },
+            {
+              "name": "Event Blink",
+              "description": "Leaves twin gold flashes and strikes from afar.",
+              "handler": "blink",
+              "declaredBaseCooldown": 5.3,
+              "sourceLine": 776
+            },
+            {
+              "name": "Radiant Pulse",
+              "description": "Detonates an expanding ring of starlight.",
+              "handler": "radiantpulse",
+              "declaredBaseCooldown": 6.2,
+              "sourceLine": 776
+            },
+            {
+              "name": "RED GIANT PROTOCOL",
+              "description": "Fires three enormous beams that cross at the target.",
+              "handler": "redgiant",
+              "declaredBaseCooldown": 14.8,
+              "sourceLine": 776
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        4.2,
+        5.3,
+        6.2,
+        14.8
+      ],
+      "serverSourceStatus": "source metadata mapped; online behavior still needs bespoke implementation"
+    },
+    {
+      "id": "pulsar",
+      "name": "Pulsar Twins",
+      "group": "Cosmic core",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Binary Sparks",
+              "description": "Twin stars orbit and blast outward.",
+              "handler": "binary",
+              "declaredBaseCooldown": 4.2,
+              "sourceLine": 777
+            },
+            {
+              "name": "Arc Stitch",
+              "description": "Chains a zigzag arc of electric light to the target.",
+              "handler": "arcstitch",
+              "declaredBaseCooldown": 5.0,
+              "sourceLine": 777
+            },
+            {
+              "name": "Pulse Train",
+              "description": "Releases three rhythmic expanding rings.",
+              "handler": "pulsetrain",
+              "declaredBaseCooldown": 6.4,
+              "sourceLine": 777
+            },
+            {
+              "name": "MILLISECOND NOVA",
+              "description": "A rapid succession of dazzling pulsar detonations.",
+              "handler": "millinova",
+              "declaredBaseCooldown": 14.4,
+              "sourceLine": 777
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        4.2,
+        5.0,
+        6.4,
+        14.4
+      ],
+      "serverSourceStatus": "source metadata mapped; online behavior still needs bespoke implementation"
+    },
+    {
+      "id": "voidbloom",
+      "name": "Void Bloom",
+      "group": "Cosmic core",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Astral Roots",
+              "description": "Summons glowing roots beneath the rival.",
+              "handler": "roots",
+              "declaredBaseCooldown": 4.8,
+              "sourceLine": 778
+            },
+            {
+              "name": "Void Seed",
+              "description": "Launches a seed that erupts into a thorny bloom.",
+              "handler": "seed",
+              "declaredBaseCooldown": 4.6,
+              "sourceLine": 778
+            },
+            {
+              "name": "Petal Orbit",
+              "description": "Spins a shield of sharp luminous petals.",
+              "handler": "petalorbit",
+              "declaredBaseCooldown": 5.7,
+              "sourceLine": 778
+            },
+            {
+              "name": "GARDEN OF THE END",
+              "description": "An enormous void flower opens and lashes the arena.",
+              "handler": "endgarden",
+              "declaredBaseCooldown": 15.1,
+              "sourceLine": 778
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        4.8,
+        4.6,
+        5.7,
+        15.1
+      ],
+      "serverSourceStatus": "source metadata mapped; online behavior still needs bespoke implementation"
+    },
+    {
+      "id": "fourthwall",
+      "name": "Fourth Wall Breaker",
+      "group": "Cosmic core",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Cursor Snare",
+              "description": "Rewrites its position to strike from an impossible angle and briefly pins the rival.",
+              "handler": "cursorSnare",
+              "declaredBaseCooldown": 4.5,
+              "sourceLine": 779
+            },
+            {
+              "name": "Panel Skip",
+              "description": "Jumps between broken comic panels and attacks from outside normal space.",
+              "handler": "panelbreak",
+              "declaredBaseCooldown": 6.1,
+              "sourceLine": 779
+            },
+            {
+              "name": "Reality Desync",
+              "description": "Vanishes between frames, then exposes the rival’s hitbox with a reality-splitting strike.",
+              "handler": "debugray",
+              "declaredBaseCooldown": 6.8,
+              "sourceLine": 779
+            },
+            {
+              "name": "FRAME ZERO",
+              "description": "Escapes the arena’s render boundaries and corrupts the battle itself in a full-screen reality crash.",
+              "handler": "framebreak",
+              "declaredBaseCooldown": 15.2,
+              "sourceLine": 779
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        4.5,
+        6.1,
+        6.8,
+        15.2
+      ],
+      "serverSourceStatus": "source metadata mapped; online behavior still needs bespoke implementation"
+    },
+    {
+      "id": "tidal",
+      "name": "Tidal Leviathan",
+      "group": "Cosmic core",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Wavefront",
+              "description": "A rolling crescent of water pressure surges outward.",
+              "handler": "wavefront",
+              "declaredBaseCooldown": 4.4,
+              "sourceLine": 780
+            },
+            {
+              "name": "Undertow",
+              "description": "A spiraling current pulls rivals toward a dense water core.",
+              "handler": "undertow",
+              "declaredBaseCooldown": 5.2,
+              "sourceLine": 780
+            },
+            {
+              "name": "Abyssal Pressure",
+              "description": "A deep-sea pressure bubble slows and crushes nearby rivals.",
+              "handler": "abyssal",
+              "declaredBaseCooldown": 6.6,
+              "sourceLine": 780
+            },
+            {
+              "name": "MAELSTROM ENGINE",
+              "description": "A towering rotating ocean vortex engulfs the square arena.",
+              "handler": "maelstrom",
+              "declaredBaseCooldown": 15.3,
+              "sourceLine": 780
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        4.4,
+        5.2,
+        6.6,
+        15.3
+      ],
+      "serverSourceStatus": "source metadata mapped; online behavior still needs bespoke implementation"
+    },
+    {
+      "id": "siren",
+      "name": "Echo Siren",
+      "group": "Cosmic core",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Sonic Ping",
+              "description": "A focused resonance note bounces into the target.",
+              "handler": "sonicPing",
+              "declaredBaseCooldown": 4.0,
+              "sourceLine": 781
+            },
+            {
+              "name": "Reverb Bloom",
+              "description": "A single hit returns as several fading pressure rings.",
+              "handler": "reverbBloom",
+              "declaredBaseCooldown": 5.5,
+              "sourceLine": 781
+            },
+            {
+              "name": "Hush Field",
+              "description": "Cancels the battlefield rhythm, slowing enemies inside a silent-looking zone.",
+              "handler": "hushfield",
+              "declaredBaseCooldown": 6.5,
+              "sourceLine": 781
+            },
+            {
+              "name": "INFINITE CHORUS",
+              "description": "Layered harmonic rings overlap until the whole arena vibrates.",
+              "handler": "infiniteChorus",
+              "declaredBaseCooldown": 15.1,
+              "sourceLine": 781
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        4.0,
+        5.5,
+        6.5,
+        15.1
+      ],
+      "serverSourceStatus": "source metadata mapped; online behavior still needs bespoke implementation"
+    },
+    {
+      "id": "magnetar",
+      "name": "Magnetar Knight",
+      "group": "Cosmic core",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Polarity Shift",
+              "description": "Flips the local field and pulls a rival into striking range.",
+              "handler": "polarityShift",
+              "declaredBaseCooldown": 4.2,
+              "sourceLine": 782
+            },
+            {
+              "name": "Railstrike",
+              "description": "A magnetically accelerated blade dash hits like a railgun slug.",
+              "handler": "railstrike",
+              "declaredBaseCooldown": 5.6,
+              "sourceLine": 782
+            },
+            {
+              "name": "Iron Halo",
+              "description": "A rotating magnetic shell shields the Knight and burns close rivals.",
+              "handler": "ironHalo",
+              "declaredBaseCooldown": 6.7,
+              "sourceLine": 782
+            },
+            {
+              "name": "MAGNETAR FLARE",
+              "description": "A stellar magnetic storm draws bright arcs across the battlefield.",
+              "handler": "magnetarFlare",
+              "declaredBaseCooldown": 15.6,
+              "sourceLine": 782
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        4.2,
+        5.6,
+        6.7,
+        15.6
+      ],
+      "serverSourceStatus": "source metadata mapped; online behavior still needs bespoke implementation"
+    },
+    {
+      "id": "mimic",
+      "name": "Crystal Mimic",
+      "group": "Cosmic core",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Prism Copy",
+              "description": "Creates a faceted decoy and flicks a copied crystal bolt.",
+              "handler": "prismCopy",
+              "declaredBaseCooldown": 4.3,
+              "sourceLine": 783
+            },
+            {
+              "name": "Shiver Shards",
+              "description": "Fires a fan of razor-bright crystal splinters.",
+              "handler": "shiverShards",
+              "declaredBaseCooldown": 5.0,
+              "sourceLine": 783
+            },
+            {
+              "name": "Mirror Trap",
+              "description": "A mirrored prism cage snaps shut around a rival.",
+              "handler": "mirrorTrap",
+              "declaredBaseCooldown": 6.4,
+              "sourceLine": 783
+            },
+            {
+              "name": "SHATTERED REFLECTION",
+              "description": "The whole arena fractures into a storm of mirrored light.",
+              "handler": "shatteredReflection",
+              "declaredBaseCooldown": 15.2,
+              "sourceLine": 783
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        4.3,
+        5.0,
+        6.4,
+        15.2
+      ],
+      "serverSourceStatus": "source metadata mapped; online behavior still needs bespoke implementation"
+    },
+    {
+      "id": "archivist",
+      "name": "Star Archivist",
+      "group": "Cosmic core",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Constellation Map",
+              "description": "Connects bright stars into a damaging constellation.",
+              "handler": "constellationMap",
+              "declaredBaseCooldown": 4.5,
+              "sourceLine": 784
+            },
+            {
+              "name": "Starfolio",
+              "description": "Flicks a tiny star atlas that unfolds into tracking glyphs.",
+              "handler": "starfolio",
+              "declaredBaseCooldown": 5.1,
+              "sourceLine": 784
+            },
+            {
+              "name": "Catalogue Mark",
+              "description": "Indexes a rival; the next burst is amplified.",
+              "handler": "catalogueMark",
+              "declaredBaseCooldown": 6.1,
+              "sourceLine": 784
+            },
+            {
+              "name": "FINAL FOOTNOTE",
+              "description": "A shower of living constellations writes itself across the whole arena.",
+              "handler": "finalFootnote",
+              "declaredBaseCooldown": 15.4,
+              "sourceLine": 784
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        4.5,
+        5.1,
+        6.1,
+        15.4
+      ],
+      "serverSourceStatus": "source metadata mapped; online behavior still needs bespoke implementation"
+    },
+    {
+      "id": "aries",
+      "name": "Aries",
+      "group": "Zodiac",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Ram Rush",
+              "description": "Dashes through the rival leaving burning horn-prints.",
+              "handler": "ramRush",
+              "declaredBaseCooldown": 3.6,
+              "sourceLine": 1699
+            },
+            {
+              "name": "Horn Shatter",
+              "description": "A cracking horn burst that launches nearby rivals.",
+              "handler": "hornShatter",
+              "declaredBaseCooldown": 5.0,
+              "sourceLine": 1699
+            },
+            {
+              "name": "Battle Cry",
+              "description": "A red shockwave slows rivals and hardens the ram.",
+              "handler": "battleCry",
+              "declaredBaseCooldown": 6.8,
+              "sourceLine": 1699
+            },
+            {
+              "name": "STAMPEDE OF THE FIRST FLAME",
+              "description": "Three blazing ram dashes tear across the arena.",
+              "handler": "stampede",
+              "declaredBaseCooldown": 14.6,
+              "sourceLine": 1699
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        3.6,
+        5.0,
+        6.8,
+        14.6
+      ],
+      "serverSourceStatus": "source metadata mapped; online behavior still needs bespoke implementation"
+    },
+    {
+      "id": "taurus",
+      "name": "Taurus",
+      "group": "Zodiac",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Gore Charge",
+              "description": "A heavy, slow charge that sends rivals flying.",
+              "handler": "goreCharge",
+              "declaredBaseCooldown": 4.2,
+              "sourceLine": 1700
+            },
+            {
+              "name": "Fault Line",
+              "description": "Splits the ground in a cracking line that slows.",
+              "handler": "faultLine",
+              "declaredBaseCooldown": 5.3,
+              "sourceLine": 1700
+            },
+            {
+              "name": "Boulder Toss",
+              "description": "Hurls a homing boulder that bursts on impact.",
+              "handler": "boulder",
+              "declaredBaseCooldown": 6.2,
+              "sourceLine": 1700
+            },
+            {
+              "name": "TECTONIC CRUSH",
+              "description": "Mountain-sized stones rain across the whole arena.",
+              "handler": "tectonic",
+              "declaredBaseCooldown": 15.4,
+              "sourceLine": 1700
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        4.2,
+        5.3,
+        6.2,
+        15.4
+      ],
+      "serverSourceStatus": "source metadata mapped; online behavior still needs bespoke implementation"
+    },
+    {
+      "id": "gemini",
+      "name": "Gemini",
+      "group": "Zodiac",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Mirror Dart",
+              "description": "Fires crossing darts; the Twin joins in when present.",
+              "handler": "mirrorDart",
+              "declaredBaseCooldown": 3.5,
+              "sourceLine": 1701
+            },
+            {
+              "name": "Summon Twin",
+              "description": "Calls a living Twin that fights beside Gemini for 9s.",
+              "handler": "summonTwin",
+              "declaredBaseCooldown": 11.5,
+              "sourceLine": 1701
+            },
+            {
+              "name": "Binary Swap",
+              "description": "Swaps places with the Twin, or blinks behind the rival.",
+              "handler": "binarySwap",
+              "declaredBaseCooldown": 5.6,
+              "sourceLine": 1701
+            },
+            {
+              "name": "TWIN STAR PARADOX",
+              "description": "An empowered Twin joins as an X of starlight sweeps the arena.",
+              "handler": "twinParadox",
+              "declaredBaseCooldown": 15.0,
+              "sourceLine": 1701
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        3.5,
+        11.5,
+        5.6,
+        15.0
+      ],
+      "serverSourceStatus": "source metadata mapped; online behavior still needs bespoke implementation"
+    },
+    {
+      "id": "cancer",
+      "name": "Cancer",
+      "group": "Zodiac",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Pincer Snap",
+              "description": "Two spectral claws close in and drag rivals inward.",
+              "handler": "pincerSnap",
+              "declaredBaseCooldown": 4.4,
+              "sourceLine": 1702
+            },
+            {
+              "name": "Tidal Shell",
+              "description": "A rotating shell shields and thumps close rivals.",
+              "handler": "tidalShell",
+              "declaredBaseCooldown": 6.6,
+              "sourceLine": 1702
+            },
+            {
+              "name": "Moon Bubbles",
+              "description": "Slow homing bubbles that cling and slow.",
+              "handler": "moonBubbles",
+              "declaredBaseCooldown": 5.2,
+              "sourceLine": 1702
+            },
+            {
+              "name": "LUNAR TIDE",
+              "description": "A silver tide floods the arena, slowing foes and mending the crab.",
+              "handler": "lunarTide",
+              "declaredBaseCooldown": 15.2,
+              "sourceLine": 1702
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        4.4,
+        6.6,
+        5.2,
+        15.2
+      ],
+      "serverSourceStatus": "source metadata mapped; online behavior still needs bespoke implementation"
+    },
+    {
+      "id": "leo",
+      "name": "Leo",
+      "group": "Zodiac",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Mane Flare",
+              "description": "A flaring mane burst scorches everything close.",
+              "handler": "maneFlare",
+              "declaredBaseCooldown": 4.0,
+              "sourceLine": 1703
+            },
+            {
+              "name": "Royal Claw",
+              "description": "Three rapid claw slashes.",
+              "handler": "royalClaw",
+              "declaredBaseCooldown": 5.0,
+              "sourceLine": 1703
+            },
+            {
+              "name": "Solar Roar",
+              "description": "A cone-shaped roar that stuns and shoves.",
+              "handler": "solarRoar",
+              "declaredBaseCooldown": 6.5,
+              "sourceLine": 1703
+            },
+            {
+              "name": "KING OF THE SOLAR COURT",
+              "description": "Three sunbeams rotate across the arena like a crown of rays.",
+              "handler": "solarCourt",
+              "declaredBaseCooldown": 15.0,
+              "sourceLine": 1703
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        4.0,
+        5.0,
+        6.5,
+        15.0
+      ],
+      "serverSourceStatus": "source metadata mapped; online behavior still needs bespoke implementation"
+    },
+    {
+      "id": "virgo",
+      "name": "Virgo",
+      "group": "Zodiac",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Wheat Volley",
+              "description": "A fan of homing grain-darts.",
+              "handler": "wheatVolley",
+              "declaredBaseCooldown": 3.8,
+              "sourceLine": 1704
+            },
+            {
+              "name": "Purity Veil",
+              "description": "Heals, shields and pushes back close rivals.",
+              "handler": "purityVeil",
+              "declaredBaseCooldown": 7.0,
+              "sourceLine": 1704
+            },
+            {
+              "name": "Reaping Grain",
+              "description": "A field of golden stalks that harvests health from rivals.",
+              "handler": "reapingGrain",
+              "declaredBaseCooldown": 5.8,
+              "sourceLine": 1704
+            },
+            {
+              "name": "GRAND HARVEST",
+              "description": "Golden stalks sweep the arena, feeding Virgo with every cut.",
+              "handler": "grandHarvest",
+              "declaredBaseCooldown": 15.4,
+              "sourceLine": 1704
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        3.8,
+        7.0,
+        5.8,
+        15.4
+      ],
+      "serverSourceStatus": "source metadata mapped; online behavior still needs bespoke implementation"
+    },
+    {
+      "id": "libra",
+      "name": "Libra",
+      "group": "Zodiac",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Balance Strike",
+              "description": "Hits harder the more health the rival has over Libra.",
+              "handler": "balanceStrike",
+              "declaredBaseCooldown": 4.0,
+              "sourceLine": 1705
+            },
+            {
+              "name": "Scale Swing",
+              "description": "Heavy pans swing around in a punishing circle.",
+              "handler": "scaleSwing",
+              "declaredBaseCooldown": 5.6,
+              "sourceLine": 1705
+            },
+            {
+              "name": "Verdict",
+              "description": "Takes a measure of health from the rival.",
+              "handler": "verdict",
+              "declaredBaseCooldown": 6.4,
+              "sourceLine": 1705
+            },
+            {
+              "name": "JUDGEMENT OF THE SCALES",
+              "description": "A giant balance beam sweeps; if Libra is behind, the scales even out.",
+              "handler": "scalesJudgement",
+              "declaredBaseCooldown": 15.6,
+              "sourceLine": 1705
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        4.0,
+        5.6,
+        6.4,
+        15.6
+      ],
+      "serverSourceStatus": "source metadata mapped; online behavior still needs bespoke implementation"
+    },
+    {
+      "id": "scorpio",
+      "name": "Scorpio",
+      "group": "Zodiac",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Tail Lash",
+              "description": "A long stinger strike; fires a barb from far away.",
+              "handler": "tailLash",
+              "declaredBaseCooldown": 3.6,
+              "sourceLine": 1706
+            },
+            {
+              "name": "Burrow Strike",
+              "description": "Vanishes, then erupts beside the rival.",
+              "handler": "burrow",
+              "declaredBaseCooldown": 5.8,
+              "sourceLine": 1706
+            },
+            {
+              "name": "Stinger Barrage",
+              "description": "Three venom barbs.",
+              "handler": "stingerBarrage",
+              "declaredBaseCooldown": 4.6,
+              "sourceLine": 1706
+            },
+            {
+              "name": "ANTARES EXECUTION",
+              "description": "Marks the rival; a red star then falls, deadlier on poisoned prey.",
+              "handler": "antares",
+              "declaredBaseCooldown": 14.8,
+              "sourceLine": 1706
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        3.6,
+        5.8,
+        4.6,
+        14.8
+      ],
+      "serverSourceStatus": "source metadata mapped; online behavior still needs bespoke implementation"
+    },
+    {
+      "id": "sagittarius",
+      "name": "Sagittarius",
+      "group": "Zodiac",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Starshot",
+              "description": "A fast, piercing arrow of starlight.",
+              "handler": "starshot",
+              "declaredBaseCooldown": 3.2,
+              "sourceLine": 1707
+            },
+            {
+              "name": "Ricochet Quiver",
+              "description": "An arrow that bounces twice off the walls.",
+              "handler": "ricochet",
+              "declaredBaseCooldown": 5.0,
+              "sourceLine": 1707
+            },
+            {
+              "name": "Galloping Volley",
+              "description": "Five arrows loosed in quick succession.",
+              "handler": "galloping",
+              "declaredBaseCooldown": 6.0,
+              "sourceLine": 1707
+            },
+            {
+              "name": "CENTAUR'S MERIDIAN",
+              "description": "A rain of arrows falls while one giant arrow pierces the arena.",
+              "handler": "meridian",
+              "declaredBaseCooldown": 14.8,
+              "sourceLine": 1707
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        3.2,
+        5.0,
+        6.0,
+        14.8
+      ],
+      "serverSourceStatus": "source metadata mapped; online behavior still needs bespoke implementation"
+    },
+    {
+      "id": "capricorn",
+      "name": "Capricorn",
+      "group": "Zodiac",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Glacial Horn",
+              "description": "An icy charge that chills what it hits.",
+              "handler": "glacialHorn",
+              "declaredBaseCooldown": 4.0,
+              "sourceLine": 1708
+            },
+            {
+              "name": "Frost Spiral",
+              "description": "A spiralling frost vortex around the goat.",
+              "handler": "frostSpiral",
+              "declaredBaseCooldown": 5.4,
+              "sourceLine": 1708
+            },
+            {
+              "name": "Brinefreeze",
+              "description": "A salt-ice orb that roots rivals on impact.",
+              "handler": "brinefreeze",
+              "declaredBaseCooldown": 6.2,
+              "sourceLine": 1708
+            },
+            {
+              "name": "ABSOLUTE ZERO SUMMIT",
+              "description": "A frozen spiral engulfs the arena, slowing everything.",
+              "handler": "absoluteZero",
+              "declaredBaseCooldown": 15.3,
+              "sourceLine": 1708
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        4.0,
+        5.4,
+        6.2,
+        15.3
+      ],
+      "serverSourceStatus": "source metadata mapped; online behavior still needs bespoke implementation"
+    },
+    {
+      "id": "aquarius",
+      "name": "Aquarius",
+      "group": "Zodiac",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Jug Pour",
+              "description": "A long stream that slows what it touches.",
+              "handler": "jugPour",
+              "declaredBaseCooldown": 3.8,
+              "sourceLine": 1709
+            },
+            {
+              "name": "Droplet Orbit",
+              "description": "Droplets circle, then rocket outward.",
+              "handler": "dropletOrbit",
+              "declaredBaseCooldown": 5.4,
+              "sourceLine": 1709
+            },
+            {
+              "name": "Cosmic Current",
+              "description": "A wide current that slams rivals back.",
+              "handler": "cosmicCurrent",
+              "declaredBaseCooldown": 6.3,
+              "sourceLine": 1709
+            },
+            {
+              "name": "AGE OF AQUARIUS",
+              "description": "Star-water rains and pulls everything into a whirlpool.",
+              "handler": "ageAquarius",
+              "declaredBaseCooldown": 15.2,
+              "sourceLine": 1709
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        3.8,
+        5.4,
+        6.3,
+        15.2
+      ],
+      "serverSourceStatus": "source metadata mapped; online behavior still needs bespoke implementation"
+    },
+    {
+      "id": "pisces",
+      "name": "Pisces",
+      "group": "Zodiac",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Twin Current",
+              "description": "Two fish circle in, then converge.",
+              "handler": "twinCurrent",
+              "declaredBaseCooldown": 3.6,
+              "sourceLine": 1710
+            },
+            {
+              "name": "Tide Ribbon",
+              "description": "A glowing ribbon links and drags the rival.",
+              "handler": "tideRibbon",
+              "declaredBaseCooldown": 6.0,
+              "sourceLine": 1710
+            },
+            {
+              "name": "Dreamward",
+              "description": "Phases out, heals and drifts away.",
+              "handler": "dreamward",
+              "declaredBaseCooldown": 6.8,
+              "sourceLine": 1710
+            },
+            {
+              "name": "OCEAN OF DREAMS",
+              "description": "A dream-ocean spiral drags rivals in while Pisces heals.",
+              "handler": "oceanDreams",
+              "declaredBaseCooldown": 15.5,
+              "sourceLine": 1710
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        3.6,
+        6.0,
+        6.8,
+        15.5
+      ],
+      "serverSourceStatus": "source metadata mapped; online behavior still needs bespoke implementation"
+    },
+    {
+      "id": "mercury",
+      "name": "Mercury",
+      "group": "Planets",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Winged Dash",
+              "description": "Rockets through the rival, leaving a chromatic wake.",
+              "handler": "wingDash",
+              "declaredBaseCooldown": 3.0,
+              "sourceLine": 1918
+            },
+            {
+              "name": "Quicksilver Blink",
+              "description": "Teleports behind the rival and slashes on arrival.",
+              "handler": "quickBlink",
+              "declaredBaseCooldown": 4.6,
+              "sourceLine": 1918
+            },
+            {
+              "name": "Caduceus Volley",
+              "description": "Two waves of five homing winged darts.",
+              "handler": "caduceus",
+              "declaredBaseCooldown": 5.4,
+              "sourceLine": 1918
+            },
+            {
+              "name": "GOD SPEED",
+              "description": "Six teleport-strikes in a heartbeat while the screen strobes negative.",
+              "handler": "godSpeed",
+              "declaredBaseCooldown": 14.6,
+              "sourceLine": 1918
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        3.0,
+        4.6,
+        5.4,
+        14.6
+      ],
+      "serverSourceStatus": "source metadata mapped; online behavior still needs bespoke implementation"
+    },
+    {
+      "id": "venus",
+      "name": "Venus",
+      "group": "Planets",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Rose Petals",
+              "description": "Homing petals that heal Venus on contact.",
+              "handler": "rosePetals",
+              "declaredBaseCooldown": 3.8,
+              "sourceLine": 1919
+            },
+            {
+              "name": "Charm",
+              "description": "A rose-gold tether drags the rival close and drains it.",
+              "handler": "charm",
+              "declaredBaseCooldown": 6.0,
+              "sourceLine": 1919
+            },
+            {
+              "name": "Veil Blink",
+              "description": "Blinks away, leaving a scalding acid-cloud veil.",
+              "handler": "veilBlink",
+              "declaredBaseCooldown": 5.8,
+              "sourceLine": 1919
+            },
+            {
+              "name": "HEART OF THE MORNING STAR",
+              "description": "Inverts the world in pink; a love-storm drains everyone while two Cupids join.",
+              "handler": "heartStar",
+              "declaredBaseCooldown": 15.2,
+              "sourceLine": 1919
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        3.8,
+        6.0,
+        5.8,
+        15.2
+      ],
+      "serverSourceStatus": "source metadata mapped; online behavior still needs bespoke implementation"
+    },
+    {
+      "id": "earth",
+      "name": "Earth",
+      "group": "Planets",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Gaia Quake",
+              "description": "Two stunning seismic rings.",
+              "handler": "quake",
+              "declaredBaseCooldown": 4.4,
+              "sourceLine": 1920
+            },
+            {
+              "name": "Moon Companion",
+              "description": "Summons Luna to fight for 10 seconds.",
+              "handler": "moonSummon",
+              "declaredBaseCooldown": 9.0,
+              "sourceLine": 1920
+            },
+            {
+              "name": "Magnetosphere",
+              "description": "A shield and a field of thumping orbitals.",
+              "handler": "magnetosphere",
+              "declaredBaseCooldown": 6.8,
+              "sourceLine": 1920
+            },
+            {
+              "name": "EXTINCTION EVENT",
+              "description": "Meteors rain across the arena as the sky shudders and splits into colour.",
+              "handler": "extinction",
+              "declaredBaseCooldown": 15.6,
+              "sourceLine": 1920
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        4.4,
+        9.0,
+        6.8,
+        15.6
+      ],
+      "serverSourceStatus": "source metadata mapped; online behavior still needs bespoke implementation"
+    },
+    {
+      "id": "mars",
+      "name": "Mars",
+      "group": "Planets",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Spear of Mars",
+              "description": "Dash and a piercing spear that roots.",
+              "handler": "marsSpear",
+              "declaredBaseCooldown": 3.4,
+              "sourceLine": 1921
+            },
+            {
+              "name": "War Drums",
+              "description": "Three drum-beat shockwaves that harden the armour.",
+              "handler": "warDrums",
+              "declaredBaseCooldown": 6.0,
+              "sourceLine": 1921
+            },
+            {
+              "name": "Phobos & Deimos",
+              "description": "Summons two raging moons (Fear and Dread).",
+              "handler": "twinMoons",
+              "declaredBaseCooldown": 7.4,
+              "sourceLine": 1921
+            },
+            {
+              "name": "WAR OF THE WORLDS",
+              "description": "Blood-red inversion, four charges and a crossfire of war beams.",
+              "handler": "warWorlds",
+              "declaredBaseCooldown": 15.4,
+              "sourceLine": 1921
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        3.4,
+        6.0,
+        7.4,
+        15.4
+      ],
+      "serverSourceStatus": "source metadata mapped; online behavior still needs bespoke implementation"
+    },
+    {
+      "id": "jupiter",
+      "name": "Jupiter",
+      "group": "Planets",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Thunderbolt",
+              "description": "Marks the sky, then a lightning bolt falls on the spot.",
+              "handler": "bolt",
+              "declaredBaseCooldown": 4.2,
+              "sourceLine": 1922
+            },
+            {
+              "name": "Great Red Spot",
+              "description": "A storm that sticks to the rival and slows it.",
+              "handler": "redSpot",
+              "declaredBaseCooldown": 6.5,
+              "sourceLine": 1922
+            },
+            {
+              "name": "Galilean Moons",
+              "description": "Four moons orbit, then are hurled at the rival.",
+              "handler": "galileans",
+              "declaredBaseCooldown": 7.0,
+              "sourceLine": 1922
+            },
+            {
+              "name": "JOVE'S WRATH",
+              "description": "Seven bolts shatter the arena while the world flashes negative.",
+              "handler": "jovesWrath",
+              "declaredBaseCooldown": 15.8,
+              "sourceLine": 1922
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        4.2,
+        6.5,
+        7.0,
+        15.8
+      ],
+      "serverSourceStatus": "source metadata mapped; online behavior still needs bespoke implementation"
+    },
+    {
+      "id": "saturn",
+      "name": "Saturn",
+      "group": "Planets",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Ring Slice",
+              "description": "Hurls two razor rings that pierce.",
+              "handler": "ringSlice",
+              "declaredBaseCooldown": 3.8,
+              "sourceLine": 1923
+            },
+            {
+              "name": "Devour",
+              "description": "A hungry ring slows rivals and feeds Saturn.",
+              "handler": "devour",
+              "declaredBaseCooldown": 6.2,
+              "sourceLine": 1923
+            },
+            {
+              "name": "Ring Prison",
+              "description": "Rings lock around the rival and root it.",
+              "handler": "ringPrison",
+              "declaredBaseCooldown": 6.8,
+              "sourceLine": 1923
+            },
+            {
+              "name": "RINGS OF CRONUS",
+              "description": "Time stops in negative colour, then vast rings crush the arena.",
+              "handler": "cronusRings",
+              "declaredBaseCooldown": 15.4,
+              "sourceLine": 1923
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        3.8,
+        6.2,
+        6.8,
+        15.4
+      ],
+      "serverSourceStatus": "source metadata mapped; online behavior still needs bespoke implementation"
+    },
+    {
+      "id": "uranus",
+      "name": "Uranus",
+      "group": "Planets",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Sideroll",
+              "description": "Rolls sideways, then lunges in.",
+              "handler": "sideRoll",
+              "declaredBaseCooldown": 3.8,
+              "sourceLine": 1924
+            },
+            {
+              "name": "Ice Gale",
+              "description": "A huge freezing gust that blows rivals away.",
+              "handler": "gale",
+              "declaredBaseCooldown": 5.4,
+              "sourceLine": 1924
+            },
+            {
+              "name": "Axis Tilt",
+              "description": "Flips the rival\\'s momentum and stuns it.",
+              "handler": "axisTilt",
+              "declaredBaseCooldown": 6.4,
+              "sourceLine": 1924
+            },
+            {
+              "name": "THE WORLD ON ITS SIDE",
+              "description": "The whole arena tilts and chromatic blizzards sweep sideways.",
+              "handler": "tiltWorld",
+              "declaredBaseCooldown": 15.6,
+              "sourceLine": 1924
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        3.8,
+        5.4,
+        6.4,
+        15.6
+      ],
+      "serverSourceStatus": "source metadata mapped; online behavior still needs bespoke implementation"
+    },
+    {
+      "id": "neptune",
+      "name": "Neptune",
+      "group": "Planets",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Trident Thrust",
+              "description": "Three piercing prongs.",
+              "handler": "trident",
+              "declaredBaseCooldown": 3.8,
+              "sourceLine": 1925
+            },
+            {
+              "name": "Riptide",
+              "description": "Lunges in and drags the rival into a maelstrom.",
+              "handler": "riptide",
+              "declaredBaseCooldown": 5.6,
+              "sourceLine": 1925
+            },
+            {
+              "name": "Triton",
+              "description": "Summons a sea-knight for 10 seconds.",
+              "handler": "krakenSummon",
+              "declaredBaseCooldown": 8.6,
+              "sourceLine": 1925
+            },
+            {
+              "name": "TEMPEST OF THE DEEP",
+              "description": "A whirlpool and tidal waves sweep the arena under a sapphire shift.",
+              "handler": "tempestDeep",
+              "declaredBaseCooldown": 15.2,
+              "sourceLine": 1925
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        3.8,
+        5.6,
+        8.6,
+        15.2
+      ],
+      "serverSourceStatus": "source metadata mapped; online behavior still needs bespoke implementation"
+    },
+    {
+      "id": "pluto",
+      "name": "Pluto",
+      "group": "Planets",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Soul Drain",
+              "description": "A violet tether drains the rival\\'s soul.",
+              "handler": "soulDrain",
+              "declaredBaseCooldown": 4.2,
+              "sourceLine": 1926
+            },
+            {
+              "name": "Charon's Ferry",
+              "description": "Swaps places with the rival and stuns.",
+              "handler": "charonFerry",
+              "declaredBaseCooldown": 5.8,
+              "sourceLine": 1926
+            },
+            {
+              "name": "Cerberus",
+              "description": "Unleashes three Hellhounds.",
+              "handler": "cerberus",
+              "declaredBaseCooldown": 8.0,
+              "sourceLine": 1926
+            },
+            {
+              "name": "UNDERWORLD UPRISING",
+              "description": "The world turns fully negative as the dead rise and drain everyone.",
+              "handler": "underworld",
+              "declaredBaseCooldown": 15.8,
+              "sourceLine": 1926
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        4.2,
+        5.8,
+        8.0,
+        15.8
+      ],
+      "serverSourceStatus": "source metadata mapped; online behavior still needs bespoke implementation"
+    },
+    {
+      "id": "ceres",
+      "name": "Ceres",
+      "group": "Planets",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Sickle Belt",
+              "description": "Rocks orbit Ceres, then are flung out as a fan.",
+              "handler": "sickle",
+              "declaredBaseCooldown": 3.8,
+              "sourceLine": 1927
+            },
+            {
+              "name": "Bountiful Harvest",
+              "description": "Heals and blooms a draining ring.",
+              "handler": "harvest",
+              "declaredBaseCooldown": 6.4,
+              "sourceLine": 1927
+            },
+            {
+              "name": "Belt Surge",
+              "description": "Dashes and sweeps three asteroid lanes.",
+              "handler": "beltSurge",
+              "declaredBaseCooldown": 5.6,
+              "sourceLine": 1927
+            },
+            {
+              "name": "ASTEROID BELT HARVEST",
+              "description": "Rotating asteroid lanes harvest the arena for health.",
+              "handler": "beltHarvest",
+              "declaredBaseCooldown": 15.0,
+              "sourceLine": 1927
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        3.8,
+        6.4,
+        5.6,
+        15.0
+      ],
+      "serverSourceStatus": "source metadata mapped; online behavior still needs bespoke implementation"
+    },
+    {
+      "id": "stardust",
+      "name": "Stardust Scout",
+      "group": "Common",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Wishing Star",
+              "description": "A slow homing star that lands, twinkles, then bursts.",
+              "handler": "sdStar",
+              "declaredBaseCooldown": 3.4,
+              "sourceLine": 2007
+            },
+            {
+              "name": "Comet Sweep",
+              "description": "Dashes and drops three star-mines that detonate after a beat.",
+              "handler": "sdSweep",
+              "declaredBaseCooldown": 4.8,
+              "sourceLine": 2007
+            },
+            {
+              "name": "Constellation Snare",
+              "description": "Stars pin the rival in a pentagram that slows, then flashes.",
+              "handler": "sdSnare",
+              "declaredBaseCooldown": 6.4,
+              "sourceLine": 2007
+            },
+            {
+              "name": "BIG DIPPER WISH",
+              "description": "Seven stars fall in the shape of the Dipper, then one huge wish lands.",
+              "handler": "sdDipper",
+              "declaredBaseCooldown": 14.2,
+              "sourceLine": 2007
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        3.4,
+        4.8,
+        6.4,
+        14.2
+      ],
+      "serverSourceStatus": "source metadata mapped; online behavior still needs bespoke implementation"
+    },
+    {
+      "id": "cinder",
+      "name": "Cinder Sprite",
+      "group": "Common",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Match Strike",
+              "description": "Dashes and leaves lingering embers burning on the floor.",
+              "handler": "cnMatch",
+              "declaredBaseCooldown": 3.6,
+              "sourceLine": 2008
+            },
+            {
+              "name": "Smoke Puff",
+              "description": "Vanishes in a slowing smoke cloud and reappears away.",
+              "handler": "cnSmoke",
+              "declaredBaseCooldown": 5.6,
+              "sourceLine": 2008
+            },
+            {
+              "name": "Pop Rocks",
+              "description": "Five hot seeds drop around the rival and pop one by one.",
+              "handler": "cnPop",
+              "declaredBaseCooldown": 4.8,
+              "sourceLine": 2008
+            },
+            {
+              "name": "HEARTH ERUPTION",
+              "description": "The floor cracks open and lava geysers burst under the rival.",
+              "handler": "cnErupt",
+              "declaredBaseCooldown": 14.0,
+              "sourceLine": 2008
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        3.6,
+        5.6,
+        4.8,
+        14.0
+      ],
+      "serverSourceStatus": "source metadata mapped; online behavior still needs bespoke implementation"
+    },
+    {
+      "id": "moonbeam",
+      "name": "Moonbeam Monk",
+      "group": "Common",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Phase Beam",
+              "description": "A pulsing moonbeam laced with drifting crescents.",
+              "handler": "mbBeam",
+              "declaredBaseCooldown": 3.6,
+              "sourceLine": 2009
+            },
+            {
+              "name": "Eclipse Bind",
+              "description": "A dark disc blots out the rival and briefly roots it.",
+              "handler": "mbEclipse",
+              "declaredBaseCooldown": 5.6,
+              "sourceLine": 2009
+            },
+            {
+              "name": "Tide Pull",
+              "description": "A lunar tide drags rivals in, then shoves them away.",
+              "handler": "mbTide",
+              "declaredBaseCooldown": 7.0,
+              "sourceLine": 2009
+            },
+            {
+              "name": "TOTAL ECLIPSE",
+              "description": "The arena darkens under a black sun that drains rivals and mends the Monk.",
+              "handler": "mbEcl",
+              "declaredBaseCooldown": 14.6,
+              "sourceLine": 2009
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        3.6,
+        5.6,
+        7.0,
+        14.6
+      ],
+      "serverSourceStatus": "source metadata mapped; online behavior still needs bespoke implementation"
+    },
+    {
+      "id": "pebble",
+      "name": "Pebble Golem",
+      "group": "Common",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Gravel Spit",
+              "description": "A short-range shotgun of pebbles that kicks the Golem back.",
+              "handler": "pbSpit",
+              "declaredBaseCooldown": 3.6,
+              "sourceLine": 2010
+            },
+            {
+              "name": "Roll Out",
+              "description": "Curls into a rolling boulder that bowls through the rival.",
+              "handler": "pbRoll",
+              "declaredBaseCooldown": 5.2,
+              "sourceLine": 2010
+            },
+            {
+              "name": "Rockfall",
+              "description": "Shadows mark the floor; boulders drop a moment later.",
+              "handler": "pbFall",
+              "declaredBaseCooldown": 6.2,
+              "sourceLine": 2010
+            },
+            {
+              "name": "TREMOR TOWER",
+              "description": "Stone pillars rise into a cage that pulls rivals in, then crush.",
+              "handler": "pbTower",
+              "declaredBaseCooldown": 14.8,
+              "sourceLine": 2010
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        3.6,
+        5.2,
+        6.2,
+        14.8
+      ],
+      "serverSourceStatus": "source metadata mapped; online behavior still needs bespoke implementation"
+    },
+    {
+      "id": "frostwisp",
+      "name": "Frost Wisp",
+      "group": "Common",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Rime Trail",
+              "description": "Drifts away leaving four frost patches that slow whoever steps in them.",
+              "handler": "fwRime",
+              "declaredBaseCooldown": 3.6,
+              "sourceLine": 2011
+            },
+            {
+              "name": "Snow Globe",
+              "description": "A snow-filled dome shields the Wisp and freezes the air inside.",
+              "handler": "fwGlobe",
+              "declaredBaseCooldown": 6.4,
+              "sourceLine": 2011
+            },
+            {
+              "name": "Icicle Lance",
+              "description": "A long crystal lance pierces and briefly roots the rival.",
+              "handler": "fwLance",
+              "declaredBaseCooldown": 5.0,
+              "sourceLine": 2011
+            },
+            {
+              "name": "DEEP WINTER",
+              "description": "Frost creeps in from the walls while ice spikes erupt under the rival.",
+              "handler": "fwWinter",
+              "declaredBaseCooldown": 14.4,
+              "sourceLine": 2011
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        3.6,
+        6.4,
+        5.0,
+        14.4
+      ],
+      "serverSourceStatus": "source metadata mapped; online behavior still needs bespoke implementation"
+    },
+    {
+      "id": "zapmoth",
+      "name": "Zap Moth",
+      "group": "Common",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Lamp Lure",
+              "description": "Hangs a glowing lamp that drags rivals in and zaps them.",
+              "handler": "zmLamp",
+              "declaredBaseCooldown": 4.6,
+              "sourceLine": 2012
+            },
+            {
+              "name": "Scale Blink",
+              "description": "Blinks behind the rival in a burst of glittering wing-dust.",
+              "handler": "zmBlink",
+              "declaredBaseCooldown": 5.2,
+              "sourceLine": 2012
+            },
+            {
+              "name": "Arc Jump",
+              "description": "Three jagged arcs of lightning leap to the rival.",
+              "handler": "zmArc",
+              "declaredBaseCooldown": 4.0,
+              "sourceLine": 2012
+            },
+            {
+              "name": "MOTHS TO A FLAME",
+              "description": "A swarm of moths whirls around the Moth while lightning drops on the rival.",
+              "handler": "zmStorm",
+              "declaredBaseCooldown": 14.0,
+              "sourceLine": 2012
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        4.6,
+        5.2,
+        4.0,
+        14.0
+      ],
+      "serverSourceStatus": "source metadata mapped; online behavior still needs bespoke implementation"
+    },
+    {
+      "id": "whitehole",
+      "name": "White Hole",
+      "group": "Special / crossover",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Genesis Well",
+              "description": "A brilliant inverse singularity compresses nearby space, then ejects a ring of matter that blasts targets outward.",
+              "handler": "repulsionWell",
+              "declaredBaseCooldown": 4.4,
+              "sourceLine": 3699
+            },
+            {
+              "name": "Causality Reversal",
+              "description": "Reverses an enemy’s momentum and tears a luminous timeline scar through its path.",
+              "handler": "causalityReversal",
+              "declaredBaseCooldown": 5.5,
+              "sourceLine": 3699
+            },
+            {
+              "name": "Foldspace Rejection",
+              "description": "Pinches the arena into a glassy lens; White Hole vanishes through the fold and snaps into a new position.",
+              "handler": "whiteoutBlink",
+              "declaredBaseCooldown": 6.8,
+              "sourceLine": 3699
+            },
+            {
+              "name": "BIG BANG: FIRST LIGHT",
+              "description": "All rejected force compresses into a pinprick of white light before a reality-breaking shockwave detonates outward.",
+              "handler": "bigBangReversal",
+              "declaredBaseCooldown": 16.2,
+              "sourceLine": 3699
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        4.4,
+        5.5,
+        6.8,
+        16.2
+      ],
+      "serverSourceStatus": "source metadata mapped; online behavior still needs bespoke implementation"
+    },
+    {
+      "id": "claude",
+      "name": "Claude",
+      "group": "Special / crossover",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Think It Through",
+              "description": "A thought-bubble tightens around the rival, slows it, then snaps shut like a conclusion.",
+              "handler": "claudeThink",
+              "declaredBaseCooldown": 4.6,
+              "sourceLine": 4156
+            },
+            {
+              "name": "Clarifying Question",
+              "description": "A glowing “?” homes in on the rival. If it lands, the rival freezes mid-thought.",
+              "handler": "claudeAsk",
+              "declaredBaseCooldown": 5.2,
+              "sourceLine": 4157
+            },
+            {
+              "name": "Respectful Decline",
+              "description": "A hex barrier shields Claude and politely sends incoming projectiles back to their owners.",
+              "handler": "claudeDecline",
+              "declaredBaseCooldown": 6.6,
+              "sourceLine": 4158
+            },
+            {
+              "name": "EXTENDED THINKING",
+              "description": "Claude reasons out loud: seven linked thoughts spiral in on the rival, then one clean answer lands.",
+              "handler": "claudeCoT",
+              "declaredBaseCooldown": 15.0,
+              "sourceLine": 4159
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        4.6,
+        5.2,
+        6.6,
+        15.0
+      ],
+      "serverSourceStatus": "source metadata mapped; online behavior still needs bespoke implementation"
+    },
+    {
+      "id": "chatgpt",
+      "name": "ChatGPT",
+      "group": "Special / crossover",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Pattern Ping",
+              "description": "Fires a homing prompt glyph. On impact, it tags the rival, lightly slows it and opens a brief vulnerability window.",
+              "handler": "chatgptPrompt",
+              "declaredBaseCooldown": 4.5,
+              "sourceLine": 4429
+            },
+            {
+              "name": "Context Switch",
+              "description": "Folds space and reappears beyond the rival, leaving a resolving pulse at the exit point.",
+              "handler": "chatgptSwitch",
+              "declaredBaseCooldown": 5.6,
+              "sourceLine": 4430
+            },
+            {
+              "name": "Token Stream",
+              "description": "Conjures four context tokens into orbit. The stream clips nearby rivals while building a protective shield.",
+              "handler": "chatgptTokens",
+              "declaredBaseCooldown": 6.7,
+              "sourceLine": 4431
+            },
+            {
+              "name": "SYNTHESIS: ANSWER FOUND",
+              "description": "A curved neural lattice overlays the arena and links every point of the fight. The connections converge on the rival for one final synthesis burst.",
+              "handler": "chatgptSynthesis",
+              "declaredBaseCooldown": 15.6,
+              "sourceLine": 4432
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        4.5,
+        5.6,
+        6.7,
+        15.6
+      ],
+      "serverSourceStatus": "source metadata mapped; online behavior still needs bespoke implementation"
+    },
+    {
+      "id": "grok",
+      "name": "Grok",
+      "group": "Special / crossover",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Probe Query",
+              "description": "A homing truth-ray tags the rival, opens a short vulnerability window, and leaves a floating question glyph.",
+              "handler": "grokProbe",
+              "declaredBaseCooldown": 4.4,
+              "sourceLine": 4747
+            },
+            {
+              "name": "Sarcastic Rebound",
+              "description": "Grok absorbs the next moment of pressure, then fires a witty kinetic shove that reflects momentum.",
+              "handler": "grokRebound",
+              "declaredBaseCooldown": 5.5,
+              "sourceLine": 4748
+            },
+            {
+              "name": "Timeline Roast",
+              "description": "A sharp observational beam freezes the rival mid-thought and marks them for extra damage.",
+              "handler": "grokRoast",
+              "declaredBaseCooldown": 6.3,
+              "sourceLine": 4749
+            },
+            {
+              "name": "UNDERSTAND THE UNIVERSE",
+              "description": "A full-arena curiosity lattice unfolds. Reality is briefly rewritten as a cosmic diagram that collapses into one decisive truth burst on the marked target.",
+              "handler": "grokUniverse",
+              "declaredBaseCooldown": 15.8,
+              "sourceLine": 4750
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        4.4,
+        5.5,
+        6.3,
+        15.8
+      ],
+      "serverSourceStatus": "source metadata mapped; online behavior still needs bespoke implementation"
+    },
+    {
+      "id": "metaai",
+      "name": "Meta AI",
+      "group": "Special / crossover",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Prompt Drift",
+              "description": "A living prompt-orb drifts to the rival, tethers them with a soft attention field, and leaves a lingering question.",
+              "handler": "metaPrompt",
+              "declaredBaseCooldown": 4.2,
+              "sourceLine": 5098
+            },
+            {
+              "name": "Presence Orbit",
+              "description": "Meta AI wraps itself in orbiting presences — tiny live avatars that block, bump, and gently reflect pressure.",
+              "handler": "metaOrbit",
+              "declaredBaseCooldown": 5.8,
+              "sourceLine": 5099
+            },
+            {
+              "name": "Remix Reality",
+              "description": "A quick rewrite of the moment: briefly invulnerable, reflects nearby projectiles, and scrambles the rival’s footing.",
+              "handler": "metaRemix",
+              "declaredBaseCooldown": 6.4,
+              "sourceLine": 5100
+            },
+            {
+              "name": "INFINITE CANVAS",
+              "description": "The arena becomes an endless feed. A scrolling lattice of light slows all rivals, draws infinite threads to the marked target, then collapses into one warm, decisive burst of connection.",
+              "handler": "metaCanvas",
+              "declaredBaseCooldown": 15.2,
+              "sourceLine": 5101
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        4.2,
+        5.8,
+        6.4,
+        15.2
+      ],
+      "serverSourceStatus": "source metadata mapped; online behavior still needs bespoke implementation"
+    },
+    {
+      "id": "dola",
+      "name": "Dola",
+      "group": "Special / crossover",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Query Ray",
+              "description": "A homing search-beam tags the rival, opens a vulnerability window, and leaves a floating query glyph.",
+              "handler": "dolaQuery",
+              "declaredBaseCooldown": 4.2,
+              "sourceLine": 5559
+            },
+            {
+              "name": "Drone Surge",
+              "description": "Dola launches four orbiting Tool Drones (search, code, image, doc) that lock on and fire in sequence; gains a brief shield.",
+              "handler": "dolaSurge",
+              "declaredBaseCooldown": 5.6,
+              "sourceLine": 5560
+            },
+            {
+              "name": "Artifact Guard",
+              "description": "Forges a shield of floating artifact pages — paper docs, sheet grids, image frames and code blocks — briefly invulnerable, reflects projectiles with a checkmark stamp, then the pages launch at the nearest foe.",
+              "handler": "dolaArtifact",
+              "declaredBaseCooldown": 6.5,
+              "sourceLine": 5561
+            },
+            {
+              "name": "FULL STACK DELIVERY",
+              "description": "The arena floods with real artifacts: scrolling code streams, floating doc pages, image polaroids and sheet grids slow all rivals, then every tool converges on the marked target for one decisive DELIVERED chat-bubble burst that heals allies.",
+              "handler": "dolaFullStack",
+              "declaredBaseCooldown": 15.4,
+              "sourceLine": 5562
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        4.2,
+        5.6,
+        6.5,
+        15.4
+      ],
+      "serverSourceStatus": "source metadata mapped; online behavior still needs bespoke implementation"
+    },
+    {
+      "id": "perplexity",
+      "name": "Perplexity",
+      "group": "Special / crossover",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Source Seeker",
+              "description": "Launches a numbered citation shard. A real impact records a source in that rival’s dossier.",
+              "handler": "pxSeek",
+              "declaredBaseCooldown": 3.9,
+              "sourceLine": 5968
+            },
+            {
+              "name": "Triangulate",
+              "description": "Predicts a rival’s trajectory and fixes three source anchors. After a visible warning, the triangle’s edges discharge. Escape the edges to avoid the damage.",
+              "handler": "pxTriangle",
+              "declaredBaseCooldown": 5.8,
+              "sourceLine": 5969
+            },
+            {
+              "name": "Peer Review",
+              "description": "Opens a brief teal review lattice, gains a capped shield and knocks nearby hostile projectiles off course. No stolen ownership, no invincibility.",
+              "handler": "pxReview",
+              "declaredBaseCooldown": 6.7,
+              "sourceLine": 5970
+            },
+            {
+              "name": "THE ANSWER ENGINE",
+              "description": "A huge wireframe logo unfolds over the void. Three sources pin down a predicted location; warning lines lock, then converge into an avoidable, geometric verdict.",
+              "handler": "pxAnswer",
+              "declaredBaseCooldown": 15.2,
+              "sourceLine": 5971
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        3.9,
+        5.8,
+        6.7,
+        15.2
+      ],
+      "serverSourceStatus": "source metadata mapped; online behavior still needs bespoke implementation"
+    },
+    {
+      "id": "lovers",
+      "name": "Celestial Lover",
+      "group": "Special / crossover",
+      "variants": [
+        {
+          "id": "king_lead",
+          "label": "King lead / initial source kit",
+          "skills": [
+            {
+              "name": "Royal Step",
+              "description": "The King moves exactly one square (any direction). The squares he leaves and lands on burn and slow.",
+              "handler": "llStep",
+              "declaredBaseCooldown": 3.6,
+              "sourceLine": 6197,
+              "sourceOffset": 5406660
+            },
+            {
+              "name": "Castling Vow",
+              "description": "King and Queen swap squares. Rook towers crash down on both and the pair gains a shield.",
+              "handler": "llCastle",
+              "declaredBaseCooldown": 5.4,
+              "sourceLine": 6198,
+              "sourceOffset": 5406794
+            },
+            {
+              "name": "Knight’s Fork",
+              "description": "A knight leaps in an L onto the rival’s square. Then all eight L-squares around it detonate: stand next to the knight, not an L away.",
+              "handler": "llFork",
+              "declaredBaseCooldown": 6.8,
+              "sourceLine": 6199,
+              "sourceOffset": 5406920
+            },
+            {
+              "name": "ROYAL CHECK",
+              "description": "The board goes dark. Five checker squares are struck by pillars of light, then CHECKMATE lands on the centre. Then the pair DUET.",
+              "handler": "llCheck",
+              "declaredBaseCooldown": 15.5,
+              "sourceLine": 6200,
+              "sourceOffset": 5407090
+            }
+          ]
+        },
+        {
+          "id": "queen_lead",
+          "label": "Queen lead / alternate source kit",
+          "skills": [
+            {
+              "name": "Rook’s Lane",
+              "description": "A crimson rook sweeps the whole rank or file of the rival’s square.",
+              "handler": "llRook",
+              "declaredBaseCooldown": 3.4,
+              "sourceLine": 6201,
+              "sourceOffset": 5407257
+            },
+            {
+              "name": "Bishop’s Cross",
+              "description": "Two bishops cut both full diagonals through the rival’s square. Step off the X.",
+              "handler": "llBishop",
+              "declaredBaseCooldown": 5.0,
+              "sourceLine": 6202,
+              "sourceOffset": 5407359
+            },
+            {
+              "name": "Pawn Storm",
+              "description": "Five pawns march abreast and close in diagonally. Slip through the gaps.",
+              "handler": "llPawns",
+              "declaredBaseCooldown": 6.3,
+              "sourceLine": 6203,
+              "sourceOffset": 5407478
+            },
+            {
+              "name": "QUEEN’S GAMBIT",
+              "description": "Eight queen-lines radiate from the rival, then a pillar falls on the centre. Safe squares sit between rays. The King mends the crown. Then the pair DUET.",
+              "handler": "llGambit",
+              "declaredBaseCooldown": 15.5,
+              "sourceLine": 6204,
+              "sourceOffset": 5407585
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        3.6,
+        5.4,
+        6.8,
+        15.5
+      ],
+      "serverSourceStatus": "variant metadata catalogued; full source behavior not yet ported"
+    },
+    {
+      "id": "focalors",
+      "name": "Focalors",
+      "group": "Special / crossover",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Salon Solitaire",
+              "description": "Her three attendants take the stage in turn: Usher’s rapier line, Chevalmarin’s pearl cannon, then Crabaletta’s bubble snap on the rival’s predicted spot.",
+              "handler": "foSalon",
+              "declaredBaseCooldown": 3.9,
+              "sourceLine": 6698
+            },
+            {
+              "name": "Oceanid Choir",
+              "description": "Spectral Oceanids, the kin she rose from, spiral out and home in. Ousia sends five heavy spirits, Pneuma seven light ones.",
+              "handler": "foChoir",
+              "declaredBaseCooldown": 5.5,
+              "sourceLine": 6699
+            },
+            {
+              "name": "Oratrice’s Scale",
+              "description": "The scales of the Oratrice descend over the rival’s predicted position. After a visible warning they tip and crash, rooting and CONDEMNING anyone beneath.",
+              "handler": "foScale",
+              "declaredBaseCooldown": 6.9,
+              "sourceLine": 6700
+            },
+            {
+              "name": "SINNER’S FINALE",
+              "description": "ACT I the Opera Epiclese materialises and every rival is marked a sinner. ACT II the Primordial Sea rises. ACT III the Oratrice delivers its verdicts. ACT IV she sentences herself: the throne shatters, the Authority is released, and Absolution floods the stage.",
+              "handler": "foFinale",
+              "declaredBaseCooldown": 15.4,
+              "sourceLine": 6701
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        3.9,
+        5.5,
+        6.9,
+        15.4
+      ],
+      "serverSourceStatus": "source metadata mapped; online behavior still needs bespoke implementation"
+    },
+    {
+      "id": "eidolon",
+      "name": "Eidolon",
+      "group": "Special / crossover",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Mirage Volley",
+              "description": "Five glitching orbs fan out. Mid-flight they resolve: one is REAL (fast, homing, heavy), the rest are ILLUSIONS that pop into glitter and leave a sleeping trap. Which one is real?",
+              "handler": "eiCard",
+              "declaredBaseCooldown": 3.8,
+              "sourceLine": 7437
+            },
+            {
+              "name": "Cups & Balls",
+              "description": "Three cups land on the rival’s square and SHUFFLE in plain sight. Then they lift: one hid the real blast, the others hid only doves. Follow the right cup.",
+              "handler": "eiCups",
+              "declaredBaseCooldown": 6.0,
+              "sourceLine": 7438
+            },
+            {
+              "name": "Vanishing Act",
+              "description": "Eidolon vanishes in smoke. Three fakes bolt off in different directions while the real one steps out behind the rival with a strike. TA-DA.",
+              "handler": "eiVanish",
+              "declaredBaseCooldown": 8.5,
+              "sourceLine": 7439
+            },
+            {
+              "name": "THE WORLD IS A LIE",
+              "description": "I) The lights die, then the rival is drawn as a MIRRORED reflection nowhere near its true place while real attacks land. II) A fake K.O. and a fake VICTORY play out while the attacks keep coming; real ones cast shadows, fakes do not. III) The world snaps back, everything freezes, the mirror replays what you missed, and shatters.",
+              "handler": "eiWorld",
+              "declaredBaseCooldown": 15.4,
+              "sourceLine": 7440
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        3.8,
+        6.0,
+        8.5,
+        15.4
+      ],
+      "serverSourceStatus": "source metadata mapped; online behavior still needs bespoke implementation"
+    },
+    {
+      "id": "nullity",
+      "name": "Null",
+      "group": "Special / crossover",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Dead Pixel",
+              "description": "Three hollow pins fan out. Each pin DELETES the first enemy shot it touches, and every pin that lands scrubs an ERASURE stack onto the rival.",
+              "handler": "nlPins",
+              "declaredBaseCooldown": 3.4,
+              "sourceLine": 7643
+            },
+            {
+              "name": "Cut / Paste",
+              "description": "Null cuts a square out of reality (it goes blank) and PASTES the copy onto the rival, Null included. The copy lands, hits, then deletes itself in a pixel dissolve.",
+              "handler": "nlPaste",
+              "declaredBaseCooldown": 6.4,
+              "sourceLine": 7644
+            },
+            {
+              "name": "[CORRUPT.EXE]",
+              "description": "A black censor bar slams across the rival (shots deleted, skills return nothing). Then their data CORRUPTS for 5 seconds: every shot, skill and blow they throw is turned back on themselves.",
+              "handler": "nlRedact",
+              "declaredBaseCooldown": 9.2,
+              "sourceLine": 7645
+            },
+            {
+              "name": "END OF FILE",
+              "description": "I) SELECT ALL. Floor tiles are deleted and never come back. II) The world inverts and the rival is CORRUPTED: everything they throw hits them while tears open across the arena. III) A scan line deletes everything below it, the page goes blank, and reality reloads on the rival WITHOUT a floor: the arena stays DELETED until the match ends and anyone standing on nothing bleeds, harder the longer it lasts.",
+              "handler": "nlEOF",
+              "declaredBaseCooldown": 15.4,
+              "sourceLine": 7646
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        3.4,
+        6.4,
+        9.2,
+        15.4
+      ],
+      "serverSourceStatus": "source metadata mapped; online behavior still needs bespoke implementation"
+    },
+    {
+      "id": "manacle",
+      "name": "Manacle Star",
+      "group": "Special / crossover",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Tether Snap",
+              "description": "A chain hooks the rival and yanks them into melee range.",
+              "handler": "mcTether",
+              "declaredBaseCooldown": 4.2,
+              "sourceLine": 8506
+            },
+            {
+              "name": "Link Cage",
+              "description": "Chain links form a ring around the rival that slows and roots them while they are inside.",
+              "handler": "mcCage",
+              "declaredBaseCooldown": 5.6,
+              "sourceLine": 8507
+            },
+            {
+              "name": "Counterweight",
+              "description": "She swings the tethered rival like a flail into a wall for bonus damage.",
+              "handler": "mcFlail",
+              "declaredBaseCooldown": 6.5,
+              "sourceLine": 8508
+            },
+            {
+              "name": "SEVER THE LEASH",
+              "description": "She breaks all her own Seals at once. Four chains anchor the rival to the arena corners and pull taut, dealing damage that scales with tension, while loose links orbit her as blades.",
+              "handler": "mcLeash",
+              "declaredBaseCooldown": 15.8,
+              "sourceLine": 8509
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        4.2,
+        5.6,
+        6.5,
+        15.8
+      ],
+      "serverSourceStatus": "source metadata mapped; online behavior still needs bespoke implementation"
+    },
+    {
+      "id": "seraphim",
+      "name": "Seraphim",
+      "group": "Special / crossover",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Cover the Face",
+              "description": "Her wings fold over her eyes for 1.5s. She takes much less damage and reflects the first projectile. When it ends her eyes snap open and fire one homing feather per hit absorbed.",
+              "handler": "srFace",
+              "declaredBaseCooldown": 4.4,
+              "sourceLine": 9119
+            },
+            {
+              "name": "Cover the Feet",
+              "description": "She plants and her wings sweep low, igniting a ring of white-gold fire. It burns rivals and pushes them out, and she cannot be knocked back inside it.",
+              "handler": "srFeet",
+              "declaredBaseCooldown": 5.6,
+              "sourceLine": 9120
+            },
+            {
+              "name": "Take Flight",
+              "description": "She spirals through the arena trailing text-printed feathers. Any rival she touches is Witnessed and takes bonus damage for a few seconds.",
+              "handler": "srFlight",
+              "declaredBaseCooldown": 6.4,
+              "sourceLine": 9121
+            },
+            {
+              "name": "HOLY · HOLY · HOLY",
+              "description": "She unfolds six wings and rises crying Holy, Holy, Holy while cloud fills the arena and clears every projectile and hazard. Hundreds of eyes open and lock onto every rival. A single coal lance strikes the main rival, dealing huge damage and cleansing her debuffs. If she is Thrice-Holy, the third strike doubles.",
+              "handler": "srHoly",
+              "declaredBaseCooldown": 15.6,
+              "sourceLine": 9122
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        4.4,
+        5.6,
+        6.4,
+        15.6
+      ],
+      "serverSourceStatus": "source metadata mapped; online behavior still needs bespoke implementation"
+    },
+    {
+      "id": "odette",
+      "name": "Odette",
+      "group": "Special / crossover",
+      "variants": [
+        {
+          "id": "act_1",
+          "label": "Odette Act 1",
+          "skills": [
+            {
+              "name": "Stellar Pirouette",
+              "description": "A gliding spin-dash. Rings of starlight bloom where she starts and where she lands.",
+              "handler": "odW0",
+              "declaredBaseCooldown": 3.6,
+              "sourceLine": 11549,
+              "sourceOffset": 6286959
+            },
+            {
+              "name": "Constellation Feathers",
+              "description": "Five star-feathers, joined by threads of light, curve toward the rival.",
+              "handler": "odW1",
+              "declaredBaseCooldown": 4.6,
+              "sourceLine": 11550,
+              "sourceOffset": 6287081
+            },
+            {
+              "name": "Lunar Lake Embrace",
+              "description": "A moonlit lake of stars slows the rival. Odette gains a shield and a little health.",
+              "handler": "odW2",
+              "declaredBaseCooldown": 6.8,
+              "sourceLine": 11551,
+              "sourceOffset": 6287196
+            },
+            {
+              "name": "SWAN SONG · STELLAR LAMENT",
+              "description": "Stars fall one by one on the rival, then a great final bow blooms outward and mends her.",
+              "handler": "odW3",
+              "declaredBaseCooldown": 15.5,
+              "sourceLine": 11552,
+              "sourceOffset": 6287319
+            }
+          ]
+        },
+        {
+          "id": "act_2",
+          "label": "Odette Act 2",
+          "skills": [
+            {
+              "name": "Umbra Fouetté",
+              "description": "A razor dash that leaves a crescent blade of eclipse light behind her.",
+              "handler": "odB0",
+              "declaredBaseCooldown": 3.4,
+              "sourceLine": 11553,
+              "sourceOffset": 6287457
+            },
+            {
+              "name": "Dark Matter Plumes",
+              "description": "Seven black-hole feathers hunt the rival.",
+              "handler": "odB1",
+              "declaredBaseCooldown": 4.4,
+              "sourceLine": 11554,
+              "sourceOffset": 6287562
+            },
+            {
+              "name": "Odile’s Eclipse Step",
+              "description": "Collapses into shadow and reappears behind the rival with a corona burst.",
+              "handler": "odB2",
+              "declaredBaseCooldown": 6.2,
+              "sourceLine": 11555,
+              "sourceOffset": 6287643
+            },
+            {
+              "name": "32 FOUETTÉS · SUPERNOVA TURN",
+              "description": "Eight telegraphed eclipse spins spiral around the rival, then one crushing supernova turn.",
+              "handler": "odB3",
+              "declaredBaseCooldown": 14.5,
+              "sourceLine": 11556,
+              "sourceOffset": 6287758
+            }
+          ]
+        },
+        {
+          "id": "act_3",
+          "label": "Odette Act 3",
+          "skills": [
+            {
+              "name": "Pas de Deux · Twin Comets",
+              "description": "Two crossing comets, one white and one black, streak through the rival.",
+              "handler": "odD0",
+              "declaredBaseCooldown": 2.8,
+              "sourceLine": 11557,
+              "sourceOffset": 6287900
+            },
+            {
+              "name": "Zodiac Arabesque",
+              "description": "A spinning astrolabe of light and shadow follows and slows the rival.",
+              "handler": "odD1",
+              "declaredBaseCooldown": 4.0,
+              "sourceLine": 11558,
+              "sourceOffset": 6288018
+            },
+            {
+              "name": "Blood Moon Révérence",
+              "description": "A great bow raises a blood moon that detonates for heavy damage and wraps her in a shield.",
+              "handler": "odD2",
+              "declaredBaseCooldown": 5.4,
+              "sourceLine": 11559,
+              "sourceOffset": 6288125
+            },
+            {
+              "name": "ODÉLIA · BIG BANG CURTAIN CALL",
+              "description": "The cosmic curtain falls. Twelve beams turn around the rival, then the finale erupts and she heals.",
+              "handler": "odD3",
+              "declaredBaseCooldown": 15.0,
+              "sourceLine": 11560,
+              "sourceOffset": 6288257
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        3.6,
+        4.6,
+        6.8,
+        15.5
+      ],
+      "serverSourceStatus": "variant metadata catalogued; full source behavior not yet ported"
+    },
+    {
+      "id": "steve",
+      "name": "Steve",
+      "group": "Special / crossover",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Pickaxe Rush · Anvil Slam",
+              "description": "Dash attack: Steve charges with his pickaxe, hops up, conjures an anvil under his feet and drops straight down on the rival. Broken blocks drop materials.",
+              "handler": "svS0",
+              "declaredBaseCooldown": 3.2,
+              "sourceLine": 12198
+            },
+            {
+              "name": "Create Block · TNT",
+              "description": "Builds a cobble wall that stops shots and bumps rivals away, plus a small shield. A TNT block is primed where the rival is heading.",
+              "handler": "svS1",
+              "declaredBaseCooldown": 5.2,
+              "sourceLine": 12199
+            },
+            {
+              "name": "Minecart · Elytra Rocket",
+              "description": "Lays rails and rams through the rival, trapping them in the cart. Iron makes it hit harder. Then Steve opens his Elytra, boosts with a firework rocket and bursts into a firework shower.",
+              "handler": "svS2",
+              "declaredBaseCooldown": 7.0,
+              "sourceLine": 12200
+            },
+            {
+              "name": "FINAL SMASH · HOUSE OF BOOM",
+              "description": "A giant piston launches the rival into a cave of TNT, zombies and Creepers. Everything blows up, then Steve eats a victory steak.",
+              "handler": "svS3",
+              "declaredBaseCooldown": 15.0,
+              "sourceLine": 12201
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        3.2,
+        5.2,
+        7.0,
+        15.0
+      ],
+      "serverSourceStatus": "source metadata mapped; online behavior still needs bespoke implementation"
+    },
+    {
+      "id": "button",
+      "name": "Button",
+      "group": "Special / crossover",
+      "variants": [
+        {
+          "id": "default",
+          "label": "Source skill metadata (default set)",
+          "skills": [
+            {
+              "name": "Thread Snare",
+              "description": "Button fires a golden thread that wraps the rival and slows them. Stored Loneliness makes it last longer.",
+              "handler": "btS0",
+              "declaredBaseCooldown": 3.4,
+              "sourceLine": 12448
+            },
+            {
+              "name": "Sewn Together",
+              "description": "A magic stitch ties Button to the rival. If the two drift too far apart, the thread snaps and deals damage.",
+              "handler": "btS1",
+              "declaredBaseCooldown": 6.2,
+              "sourceLine": 12449
+            },
+            {
+              "name": "Spare Me a Moment",
+              "description": "Button dashes away and leaves a plush decoy behind. If a rival attacks it, the decoy bursts into golden needles.",
+              "handler": "btS2",
+              "declaredBaseCooldown": 7.4,
+              "sourceLine": 12450
+            },
+            {
+              "name": "YOU PROMISED YOU WOULDN'T LEAVE",
+              "description": "Threads fill the arena and a giant abandoned dollhouse rises behind it, its windows full of tiny eyes. Golden threads bind the rival, the house closes its doors, and every thread snaps at once in a massive shockwave.",
+              "handler": "btS3",
+              "declaredBaseCooldown": 16.0,
+              "sourceLine": 12451
+            }
+          ]
+        }
+      ],
+      "defaultServerCooldownBasis": [
+        3.4,
+        6.2,
+        7.4,
+        16.0
+      ],
+      "serverSourceStatus": "variant metadata catalogued; full source behavior not yet ported"
+    }
+  ],
+  "extractionWarnings": []
+}
