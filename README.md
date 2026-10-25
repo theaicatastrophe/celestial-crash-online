@@ -11,6 +11,19 @@ This package integrates the V45 source-defined ability-handler catalog into the 
 - **Unchanged foundation:** matchmaking remains Classic 1v1, Classic 2v2, Classic FFA4, Ranked 1v1, and Ranked 2v2. Combat state and results remain server-authoritative; ranked remains unrated.
 - **Button preserved:** Button continues to use its separate, previously tested server-side pilot instead of passing through the general source skill runner.
 
+## Update: original attack and effect visuals online (v2)
+
+Online matches now show the original offline skill effects instead of a basic flash.
+
+- **Effects are no longer lost.** The server used to clear its effect list every tick but only sent a snapshot when 50 ms had passed, so any skipped tick lost its effects. Events now wait until a snapshot is actually sent.
+- **Real zones and named effects are sent.** Every V45 zone (beams, bursts, rings, tiles, domains) and named effect (horizon, supernova, maelstrom...) is sent with its real kind, size and timing. The V48 client draws them with the offline drawing code.
+- **More events are drawn.** Floating text, particles, screen effects, summons, form changes and Odette's dance poses.
+- **More character state reaches the client.** Focalors forms, Seraphim face/flight/ultimate, Manacle seals, Steve tool, summon twins, Lovers lead and others.
+- **Odette's acts follow HP** like the offline game (Act I at 67% or more, Act II at 34% or more, otherwise Act III) with the 4.2 second performance cutscene. Her skills no longer cycle her act on every cast.
+- **New test:** `test_visual_events.js` (all 248 skill casts send a visual, events serialise safely, Odette acts, event retention).
+
+Not changed or not confirmed: Lovers' lead role does not swap on the server yet; the client changes were syntax-checked but not run in a browser. Deploy the server files and the V48 client together.
+
 ## Honest limitations
 
 This is a substantial roster-wide integration, **not a guarantee of bit-for-bit parity with every offline animation and edge case**. Source handler functions are present and smoke-tested, but visual-only code has server-safe adapters; some highly specialized interactions may still need corrections from live match feedback. The browser client may not reproduce every offline-only effect. The package hasn't been deployed or tested against the live Render service from this workspace, so keep the existing working commit available until post-deploy tests pass.
@@ -59,7 +72,7 @@ A local WebSocket package installation is required to start the server (`npm ins
 2. Open `https://github.com/theaicatastrophe/celestial-crash-online` in the Android browser.
 3. At the repository root, upload/replace all seven runtime files listed above together. The engine, combat-hook module, and JSON catalog are required runtime files. Do not delete the original offline V45 HTML.
 4. Commit. Render is expected to start a redeploy automatically, but verify the deploy status in `https://dashboard.render.com/`.
-5. Check `https://celestial-crash-online.onrender.com/health`. The expected markers are `stage: "full-roster-source-engine-v1"` and `engineVersion: "server-source-ability-engine-v1"`.
+5. Check `https://celestial-crash-online.onrender.com/health`. The expected markers are `stage: "full-roster-source-engine-v2"` and `engineVersion: "server-source-ability-engine-v2"`.
 6. Open the paired V48 client and test two-device Classic 1v1 first. Test Steve and Odette selection, basic attacks, multiple skills, ultimates, status effects, KO/results, then 2v2 and FFA4.
 7. Keep Ranked as an unrated preview. If the server fails to start or combat regresses, revert the server commit so Render returns to the previous working version.
 

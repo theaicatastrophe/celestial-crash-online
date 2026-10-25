@@ -16,8 +16,8 @@ This ZIP has NOT been uploaded to GitHub or deployed to Render by its creator st
    Keep all seven at the repository root. The new engine requires the catalog JSON and combat-hook module.
 5) Commit the changes. Check the deploy status at https://dashboard.render.com/ before testing.
 6) Open https://celestial-crash-online.onrender.com/health. Expected values:
-   stage = full-roster-source-engine-v1
-   engineVersion = server-source-ability-engine-v1
+   stage = full-roster-source-engine-v2
+   engineVersion = server-source-ability-engine-v2
 7) Use CelestialCrash_Button_V48_Full_Roster.html as the paired client. Test Classic 1v1 on two devices before trying 2v2/FFA4. Test multiple fighters, attacks, skills, ultimates, HP, KO, and match results.
 8) Keep the previous client file until the new one works. Replacing a source HTML in GitHub does not update a separate copy inside an Android packaging app automatically.
 9) If the server doesn't start or matches regress, revert the latest server commit in GitHub.

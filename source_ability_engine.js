@@ -20,6 +20,7 @@ function createSourceAbilityEngine(api) {
   const GK_PAL={void:'#05070c',bone:'#f4f0e8',cyan:'#5ce1ff',ice:'#c8f7ff',ember:'#ff9a5c',ink:'#0a0c12'};
   const MT_PAL={void:'#070A18',deep:'#0A0F24',blue:'#4A8CFF',indigo:'#7C5CFF',violet:'#A86BFF',magenta:'#FF5CA1',cyan:'#7EF5FF',white:'#F4F6FF',paper:'#EAF0FF'};
   const DOLA_PAL={violet:'#8B5CF6',deep:'#6D28D9',lavender:'#C4B5FD',mint:'#5EEAD4',gold:'#FCD34D',ink:'#150A24',paper:'#F3E8FF',rose:'#A78BFA'};
+  const FO={hy:'#79c8ff',deep:'#16307f',navy:'#070d2a',pearl:'#f3f9ff',ice:'#cfeeff',gold:'#ffd98a',amber:'#ffb55c',sin:'#ff6f93',violet:'#9a8cff',skin:'#ffe6da'};
   const PX={teal:'#52E0D0',ice:'#E6FFF8',ink:'#061B1B',gold:'#EBCB8B',dim:'#247D79'};
   const LL={K:'#ffd27a',Q:'#ff2e4d',W:'#fff4e2',ink:'#150d24',ruby:'#7a0820',vio:'#a98bff'};
   const LLP={pawn:'♟',knight:'♞',bishop:'♝',rook:'♜',queen:'♛',king:'♚'};
@@ -112,7 +113,25 @@ function createSourceAbilityEngine(api) {
   function floatText(x, y, text, color = '#fff', size = 12) {
     emit('source_text', { ownerUid: currentOwner?.uid || null, x, y, text: String(text).slice(0, 60), color, size });
   }
-  function createEffect(type, x, y, owner, opts = {}) {
+  // Copy only plain, JSON-safe visual options (numbers, booleans, short strings,
+  // small number arrays). Functions such as `hit` callbacks and fighter objects
+  // are dropped; fighter references are already uid strings in the V45 handlers.
+  function visualOpts(opts) {
+    const out = {};
+    if (!opts || typeof opts !== 'object') return out;
+    let n = 0;
+    for (const key of Object.keys(opts)) {
+      if (n >= 40) break;
+      const v = opts[key];
+      if (typeof v === 'number') { if (Number.isFinite(v)) { out[key] = Math.round(v * 1000) / 1000; n++; } }
+      else if (typeof v === 'boolean') { out[key] = v; n++; }
+      else if (typeof v === 'string') { out[key] = v.slice(0, 48); n++; }
+      else if (Array.isArray(v) && v.length <= 8 && v.every(item => typeof item === 'number' && Number.isFinite(item))) { out[key] = v.map(item => Math.round(item * 1000) / 1000); n++; }
+      else if (v && typeof v === 'object' && typeof v.uid === 'string') { out[key] = v.uid; n++; }
+    }
+    return out;
+  }
+  function createEffect(type, x, y, owner, opts = {}, quiet = false) {
     if (!roomRef) return null;
     const effect = {
       uid: crypto.randomUUID(), type, x, y, owner: owner?.uid || null, ownerId: owner?.id || null,
@@ -123,7 +142,12 @@ function createSourceAbilityEngine(api) {
       source: 'core', options: { ...opts }, once: false
     };
     effects.push(effect);
-    emit(opts.ultimate ? 'ultimate' : 'skill', { ownerUid: effect.owner, targetUid: effect.target, x, y, effect: type, ability: type, skillIndex: currentIndex, source: 'v45' });
+    // The event now carries the real effect name, size and duration so the client can
+    // draw the original V45 effect instead of a generic "hit" flash.
+    if (!quiet) emit(opts.ultimate ? 'ultimate' : 'skill', {
+      ownerUid: effect.owner, targetUid: effect.target, x, y, effect: type, ability: type, skillIndex: currentIndex, source: 'v45',
+      vfx: true, r: effect.r, duration: effect.duration, opts: visualOpts(opts)
+    });
     return effect;
   }
   function shoot(owner, target, type, damage, speed = 300, opts = {}) {
@@ -158,11 +182,17 @@ function createSourceAbilityEngine(api) {
   }
   function zD(f, angle, speed, duration) { f.vx = Math.cos(angle) * speed; f.vy = Math.sin(angle) * speed; f.dash = Math.max(f.dash || 0, duration || 0.3); }
   function zE(kind, owner, x, y, opts = {}) {
-    const effect = createEffect('source_zone', x, y, owner, { r: opts.r || 60, duration: opts.d || 1, damage: opts.dmg || 0, interval: opts.iv || 0.4 });
+    const effect = createEffect('source_zone', x, y, owner, { r: opts.r || 60, duration: opts.d || 1, damage: opts.dmg || 0, interval: opts.iv || 0.4 }, true);
     if (!effect) return null;
     effect.z = true; effect.s = owner?.id; effect.k = kind; effect.o = { ...opts, reason: currentReason, sourceIndex: currentIndex };
     effect.reason = currentReason; effect.sourceIndex = currentIndex; effect.tick = 0;
     effect.target = opts.tg || opts.ft || null;
+    // Send the original V45 zone (kind + options) to the clients so they can run the
+    // exact same offline drawing code (beams, bursts, rings, tiles, domains...).
+    emit('source_zone', {
+      ownerUid: owner?.uid || null, k: kind, x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10,
+      skillIndex: currentIndex, o: visualOpts({ ...opts, r: opts.r || 60, d: opts.d || 1 })
+    });
     return effect;
   }
   function zP(owner, target, damage, speed, opts = {}) { return shoot(owner, target, 'zp', damage, speed, opts); }
@@ -256,7 +286,58 @@ function createSourceAbilityEngine(api) {
   function eiU(f) { return effects.find(e=>e.type==='eiult'&&e.owner===f?.uid&&e.age<e.duration)||null; }
   function foE(f, x, y, o = {}) { return zE(o.k || 'ring', f, x, y, o); }
   function odE(f, x, y, o = {}) { return zE(o.k || 'burst', f, x, y, o); }
-  function odAct(f, stage) { if (f) { f.sourceVariant = (Number.isInteger(stage) ? stage : ((f.sourceVariant || 0) + 1) % 3); f.odetteAct = f.sourceVariant; emit('form_change', { ownerUid: f.uid, form: f.sourceVariant }); } }
+  // In V45 `odAct(f, kind, duration)` is only a dance *pose* (dash / cast / bow / ult). It must not
+  // change Odette's act: her act follows her HP (see odettePhase). The pose is sent to the clients.
+  function odAct(f, kind, duration) {
+    if (!f) return;
+    if (typeof kind === 'string') { emit('source_pose', { ownerUid: f.uid, k: kind, d: Number(duration) || 0.5 }); return; }
+    if (Number.isInteger(kind)) { f.odP = clamp(kind, 0, 2); f.sourceVariant = f.odetteAct = f.odP; emit('form_change', { ownerUid: f.uid, form: f.odP }); }
+  }
+  const OD_CUT = 4.2;
+  // Odette's three acts follow her HP like the offline game: Act I >= 67%, Act II >= 34%, else Act III.
+  // Changing acts starts a 4.2 s cutscene (invulnerable, pulled to the stage centre), the acts swap
+  // halfway through, then she gets a short lock + invulnerability.
+  function odettePhase(room, f, dt) {
+    if (f.odP === undefined) { f.odP = 0; f.odShow = 0; f.odLock = 0; f.odCut = 0; f.odCutT = 0; f.odNext = 0; f.odSwapped = false; }
+    const now = room.sim.elapsed;
+    if (f.odCut > 0) {
+      f.odCutT += dt;
+      const k = 1 - Math.exp(-dt * 3.2);
+      f.x += (ARENA.x + ARENA.w / 2 - f.x) * k; f.y += (ARENA.y + ARENA.h / 2 + 14 - f.y) * k;
+      f.vx = 0; f.vy = 0; f.dash = 0;
+      f.invuln = Math.max(f.invuln || 0, 0.3); f.attackCD = Math.max(f.attackCD || 0, 0.3);
+      const u = f.odCutT / OD_CUT;
+      if (!f.odSwapped && u >= 0.5) {
+        f.odSwapped = true; f.odShow = f.odNext;
+        zE('odshift', f, f.x, f.y, { r: 230, d: 1.4, c: f.odNext });
+        emit('source_visual', { ownerUid: f.uid, fx: 'flash', flash: 0.85, shake: 16 });
+      }
+      if (f.odCutT >= OD_CUT) {
+        f.odCut = 0; f.odP = f.odNext; f.odShow = f.odNext; f.odLock = now + 3;
+        f.sourceVariant = f.odetteAct = f.odP; f.invuln = Math.max(f.invuln || 0, 0.9);
+        emit('form_change', { ownerUid: f.uid, form: f.odP });
+      }
+      return;
+    }
+    const ratio = f.hp / f.maxHp, next = ratio >= 0.67 ? 0 : ratio >= 0.34 ? 1 : 2;
+    if (now >= f.odLock && next > f.odP) {
+      f.odCut = OD_CUT; f.odCutT = 0; f.odNext = next; f.odSwapped = false;
+      f.invuln = Math.max(f.invuln || 0, OD_CUT + 0.3); f.dash = 0;
+      floatText(f.x, f.y - (f.r || 22) - 60, 'THE PERFORMANCE TURNS…', '#ffe9a8', 12);
+      emit('odette_cut', { ownerUid: f.uid, from: f.odP, to: next });
+      return;
+    }
+    // Act III dances faster and recovers skills sooner, Act I recovers skills slightly slower.
+    if (f.odP === 2) {
+      f.x = clamp(f.x + f.vx * dt * 0.3, ARENA.x + (f.r || 22), ARENA.x + ARENA.w - (f.r || 22));
+      f.y = clamp(f.y + f.vy * dt * 0.3, ARENA.y + (f.r || 22), ARENA.y + ARENA.h - (f.r || 22));
+      f.attackCD -= dt * 0.5;
+      for (let i = 0; i < 3; i++) f.skillCD[i] -= dt * 0.35;
+      v13_3GainUlt(f, dt * 1.4);
+    } else if (f.odP === 0) {
+      for (let i = 0; i < 3; i++) f.skillCD[i] += dt * 0.1;
+    }
+  }
   function odHeal(f, n) { return heal(f, n || 5); }
   function odPred(f) { return findTarget(f); }
   function odSpark(f, x, y, n = 4) { spawnBurst(x, y, f, n); }
@@ -427,7 +508,7 @@ function createSourceAbilityEngine(api) {
     const entry = CATALOG.fighters.find(x => x.id === f.id);
     if (!entry) return null;
     let ix = Number.isInteger(f.sourceVariant) ? f.sourceVariant : 0;
-    if (f.id === 'odette') ix = clamp(Number.isInteger(f.odetteAct) ? f.odetteAct : ix, 0, 2);
+    if (f.id === 'odette') ix = clamp(Number.isInteger(f.odP) ? f.odP : 0, 0, 2);
     if (f.id === 'lovers') ix = clamp(Number.isInteger(f.loversLead) ? f.loversLead : ix, 0, 1);
     return entry.variants[ix] || entry.variants[0] || null;
   }
@@ -1428,7 +1509,7 @@ Object.assign(SOURCE_ZS,{
       }
       if (f.id === 'odette') {
         if ((f.odCut || 0) > 0) { f.attackCD = 0.3; return true; }
-        f.attackCD = 1.05 + rand(-0.05, 0.08); f.odetteAct = 1;
+        f.attackCD = 1.05 + rand(-0.05, 0.08); odAct(f, 'cast', 0.4);
         const count = (f.odP | 0) === 2 ? 3 : 1;
         fan(f, target, count, 310, 3.8, 0.16, { r: 5, life: 1.9, homing: 0.2 });
         return true;
@@ -1465,6 +1546,7 @@ Object.assign(SOURCE_ZS,{
     if (!f || f.dead) return;
     withReason('passive', -1, f, () => {
       try {
+        if (f.id === 'odette') odettePhase(room, f, dt);
         if (typeof SOURCE_ZS.zPass === 'function') SOURCE_ZS.zPass(f, dt);
         if (f.id === 'lunar' && Math.random() < dt * 0.6 && f.hp < f.maxHp) heal(f, 0.45);
         if (f.id === 'ceres' && Math.random() < dt * 1.1) heal(f, 0.65);

@@ -1,13 +1,13 @@
 {
   "name": "celestial-crash-online",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "private": true,
   "description": "Celestial Crash Online authoritative server with V45 roster-wide source ability integration",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "check": "node --check server.js && node --check source_mechanics.js && node --check source_combat_hooks.js && node --check source_ability_engine.js",
-    "test": "node test_source_rules.js && node test_button_pilot.js && node test_source_combat_hooks.js && node test_full_roster_abilities.js"
+    "test": "node test_source_rules.js && node test_button_pilot.js && node test_source_combat_hooks.js && node test_full_roster_abilities.js && node test_visual_events.js"
   },
   "engines": {
     "node": ">=20"

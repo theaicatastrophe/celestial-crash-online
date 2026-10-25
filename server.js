@@ -22,6 +22,9 @@ const MAX_MESSAGE_BYTES = 16 * 1024;
 const HEARTBEAT_MS = 25_000;
 const TICK_MS = 50;                 // 20 authoritative simulation ticks/sec
 const SNAPSHOT_MS = 50;              // 20 state snapshots/sec
+const SNAPSHOT_SLACK_MS = 6;         // timer jitter tolerance so ticks are not skipped
+const MAX_PENDING_EVENTS = 700;      // visual/combat events waiting for the next snapshot
+const MAX_EVENTS_PER_SNAPSHOT = 500;
 const MAX_QUEUE_PER_MODE = 300;
 const MAX_FIGHTERS = 4;
 const FIGHTER_ID_RE = /^[a-zA-Z0-9_-]{1,80}$/;
@@ -86,8 +89,8 @@ const server = http.createServer((req, res) => {
     json(res, 200, {
       ok: true,
       service: 'celestial-crash-online',
-      stage: 'full-roster-source-engine-v1',
-      engineVersion: 'server-source-ability-engine-v1',
+      stage: 'full-roster-source-engine-v2',
+      engineVersion: 'server-source-ability-engine-v2',
       queuedPlayers: queuedCount(),
       activeRooms: rooms.size,
       connectedPlayers: clients.size,
@@ -169,7 +172,7 @@ function seededJitter() { return (Math.random() * 2 - 1); }
 function emitEvent(room, type, payload = {}) {
   room.sim.eventSeq += 1;
   room.sim.events.push({ seq: room.sim.eventSeq, type, ...payload });
-  if (room.sim.events.length > 80) room.sim.events.splice(0, room.sim.events.length - 80);
+  if (room.sim.events.length > MAX_PENDING_EVENTS) room.sim.events.splice(0, room.sim.events.length - MAX_PENDING_EVENTS);
 }
 function capTeamShield(fighter) { SOURCE_RULES.capShield(fighter); }
 
@@ -718,7 +721,7 @@ function stepFighter(room, f, dt) {
   for (let i = 0; i < f.skillCD.length; i++) {
     f.skillCD[i] = Math.max(0, f.skillCD[i] - dt);
     const maxRange = i === 3 ? 520 : (i === 2 ? 390 : 465);
-    if (f.skillCD[i] <= 0 && distance <= maxRange) {
+    if (f.skillCD[i] <= 0 && distance <= maxRange && !((f.odCut || 0) > 0)) {
       const accepted = SOURCE_ABILITIES.castSkill(room, f, target, i);
       f.skillCD[i] = accepted ? SOURCE_RULES.cooldownAfterCastFor(f.id, i) : 0.35;
       // One cast per server tick keeps long ult timelines and projectiles bounded.
@@ -850,6 +853,8 @@ function publicFighter(f) {
     invuln: f.invuln, stun: f.stun, slow: f.slow, rooted: f.rooted,
     energy: f.energy, lastDir: f.lastDir, markTarget: f.markTarget, sourceVariant: f.sourceVariant || 0, odetteAct: f.odetteAct || 0, loversLead: f.loversLead || 0,
     focalorsStage: f.focalorsStage || 0, foForm: f.foForm || 0, srFace: f.srFace || 0, srFeet: f.srFeet || 0, srFly: typeof f.srFly === 'object' && f.srFly ? Math.max(0, (f.srFly.dur || 0) - (f.srFly.t || 0)) : (f.srFly || 0),
+    odP: f.odP || 0, odShow: f.odShow || 0, odCut: f.odCut || 0, odCutT: f.odCutT || 0,
+    srUlt: (f.srUlt && typeof f.srUlt === 'object') ? { t: Number(f.srUlt.t) || 0, D: Number(f.srUlt.D) || 0 } : (f.srUlt || 0), srHoly: f.srHoly || 0, srAbs: f.srAbs || 0, foUlt: f.foUlt || 0, eiUlt: f.eiUlt || 0, nlUlt: f.nlUlt || 0, nlRed: f.nlRed || 0, llWaltz: f.llWaltz || 0, llDuet: f.llDuet || 0,
     mcSeals: f.mcSeals, mcUnr: f.mcUnr, stSw: f.stSw || 0, svTool: f.svTool || 0, twin: !!f.twin, mast: f.mast || null, life: f.life || 0,
     ...(f.id === 'button' ? {
       btLone: f.btLone, btWatch: f.btWatch, btHitSrc: f.btHitSrc, btHitD: f.btHitD,
@@ -869,7 +874,7 @@ function publicProjectile(p) {
 function broadcastSnapshot(room, force = false) {
   if (room.ended) return;
   const now = Date.now();
-  if (!force && now - room.lastSnapshotAt < SNAPSHOT_MS) return;
+  if (!force && now - room.lastSnapshotAt < SNAPSHOT_MS - SNAPSHOT_SLACK_MS) return;
   room.lastSnapshotAt = now;
   room.sim.seq += 1;
   const snapshot = {
@@ -877,13 +882,16 @@ function broadcastSnapshot(room, force = false) {
     impacts: room.sim.impacts, gameOver: false, matchStarted: true,
     fighters: room.sim.fighters.map(publicFighter),
     projectiles: room.sim.projectiles.slice(-70).map(publicProjectile),
-    events: room.sim.events.slice(-80)
+    events: room.sim.events.slice(-MAX_EVENTS_PER_SNAPSHOT)
   };
+  // Events are cleared only after they were actually sent. Previously they were
+  // wiped at the start of every tick, so any tick whose snapshot was skipped by
+  // timer jitter silently lost its skill/effect visuals.
+  room.sim.events = [];
   sendRoom(room, 'battle_snapshot', { roomId: room.id, snapshot });
 }
 function tickRoom(room, dt) {
   if (room.ended) return;
-  room.sim.events = [];
   room.sim.elapsed += dt;
   SOURCE_ABILITIES.stepScheduled(room, dt);
   for (const fighter of [...room.sim.fighters]) stepFighter(room, fighter, dt);
