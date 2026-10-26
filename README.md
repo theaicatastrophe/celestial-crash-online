@@ -11,19 +11,6 @@ This package integrates the V45 source-defined ability-handler catalog into the 
 - **Unchanged foundation:** matchmaking remains Classic 1v1, Classic 2v2, Classic FFA4, Ranked 1v1, and Ranked 2v2. Combat state and results remain server-authoritative; ranked remains unrated.
 - **Button preserved:** Button continues to use its separate, previously tested server-side pilot instead of passing through the general source skill runner.
 
-## Update: original attack and effect visuals online (v2)
-
-Online matches now show the original offline skill effects instead of a basic flash.
-
-- **Effects are no longer lost.** The server used to clear its effect list every tick but only sent a snapshot when 50 ms had passed, so any skipped tick lost its effects. Events now wait until a snapshot is actually sent.
-- **Real zones and named effects are sent.** Every V45 zone (beams, bursts, rings, tiles, domains) and named effect (horizon, supernova, maelstrom...) is sent with its real kind, size and timing. The V48 client draws them with the offline drawing code.
-- **More events are drawn.** Floating text, particles, screen effects, summons, form changes and Odette's dance poses.
-- **More character state reaches the client.** Focalors forms, Seraphim face/flight/ultimate, Manacle seals, Steve tool, summon twins, Lovers lead and others.
-- **Odette's acts follow HP** like the offline game (Act I at 67% or more, Act II at 34% or more, otherwise Act III) with the 4.2 second performance cutscene. Her skills no longer cycle her act on every cast.
-- **New test:** `test_visual_events.js` (all 248 skill casts send a visual, events serialise safely, Odette acts, event retention).
-
-Not changed or not confirmed: Lovers' lead role does not swap on the server yet; the client changes were syntax-checked but not run in a browser. Deploy the server files and the V48 client together.
-
 ## Honest limitations
 
 This is a substantial roster-wide integration, **not a guarantee of bit-for-bit parity with every offline animation and edge case**. Source handler functions are present and smoke-tested, but visual-only code has server-safe adapters; some highly specialized interactions may still need corrections from live match feedback. The browser client may not reproduce every offline-only effect. The package hasn't been deployed or tested against the live Render service from this workspace, so keep the existing working commit available until post-deploy tests pass.
@@ -72,8 +59,26 @@ A local WebSocket package installation is required to start the server (`npm ins
 2. Open `https://github.com/theaicatastrophe/celestial-crash-online` in the Android browser.
 3. At the repository root, upload/replace all seven runtime files listed above together. The engine, combat-hook module, and JSON catalog are required runtime files. Do not delete the original offline V45 HTML.
 4. Commit. Render is expected to start a redeploy automatically, but verify the deploy status in `https://dashboard.render.com/`.
-5. Check `https://celestial-crash-online.onrender.com/health`. The expected markers are `stage: "full-roster-source-engine-v2"` and `engineVersion: "server-source-ability-engine-v2"`.
+5. Check `https://celestial-crash-online.onrender.com/health`. The expected markers are `stage: "full-roster-source-engine-v1"` and `engineVersion: "server-source-ability-engine-v1"`.
 6. Open the paired V48 client and test two-device Classic 1v1 first. Test Steve and Odette selection, basic attacks, multiple skills, ultimates, status effects, KO/results, then 2v2 and FFA4.
 7. Keep Ranked as an unrated preview. If the server fails to start or combat regresses, revert the server commit so Render returns to the previous working version.
 
 I have not pushed these files to GitHub or deployed them to Render from this workspace.
+
+## Update 0.5.2 — original visuals, sounds and more accurate attacks online
+
+**Deploy `server.js`, `source_ability_engine.js` and the new client HTML together** (check `/health` shows `snapshotEffects: true` and `presentation: 'sfx-cast-fx-v1'`).
+
+Visuals and sound
+- Snapshots carry the live V45 skill effects (zones, beams, clouds…), time-stop / fourth-wall state, per-character render state (forms, charges, wing poses, Odette's cutscene fields…) and per-projectile render hints. Effects and fighter state are sent in full once and as changes afterwards; numbers are rounded, so snapshots stay small (about 2–3 KB typical).
+- Skill casts show the original name text, cast particles, per-skill sound, and for ultimates the banner, screen shake/zoom/flash, burst and the full-screen ultimate effects. Hits, KOs, wall bounces and collisions use the original look and sound.
+- Browser-only sound helpers in the source (`pxSound`, `srTing`, `foSound`…) are forwarded as `sfx` events; the client plays the original function by name.
+
+Attack accuracy
+- Basic attack cadence is exactly the original `0.95 + rand(-.1,.13)`. Skills have no distance limit (as in the original). Only one ultimate may start per 3.6–6.2 s across the whole battle. Quasar's every-4th-shot REDSHIFT is back. Ultimates add the original arena zone; Aquarius adds her slow field.
+- The helper functions for Odette, Steve, Eidolon, Nullity and Focalors now follow the original signatures. Previously 16 skills (Eidolon 3, Odette 9, Steve 4) placed effects at an invalid position and several helpers did different things (Steve's mining made an explosion, aim prediction returned the wrong fighter, `odAct` changed Odette's form).
+- Per-frame character logic now runs on the server for **Seraphim** (face/feet/flight/ultimate timers, reflect, eyes-open feathers, Thrice-Holy), **Odette** (Acts at 67%/34% HP with the cutscene, form stats), **Steve** (mining, crafting, tool damage reduction, 20% pickup on hit) and **Eidolon** illusions (ageing). Other characters' countdown timers (Focalors, Lovers, Perplexity, Nullity, Manacle, Eidolon…) now count down as in the original.
+
+Known remaining gaps (not yet ported from the original per-frame code): Lovers waltz start/end transitions, Perplexity dossier/thesis bookkeeping, Focalors' condition/sin tracking, the full Nullity/Eidolon tick routines, Manacle rope/spin/fly steps, the older Zodiac-layer wrappers, and the client-side drawing of Eidolon's illusions and Seraphim's ultimate lift/cries. Characters are not stuck (checked by simulating the whole roster) but these signature details may differ from the offline game.
+
+Tools: `npm test` runs all checks; `npm run simulate -- seraphim odette` fast-forwards the real server loop and prints per-character activity.

@@ -16,3 +16,11 @@ The Node server runs movement, attack/skill cooldowns, source-defined V45 abilit
 
 
 The full-roster mechanics package adds `source_ability_engine.js`, `source_combat_hooks.js`, and `source_skill_catalog.json` as required server-root runtime files. Keep the existing WebSocket message schema unchanged when deploying.
+
+
+## Snapshot additions (0.5.2)
+- `snapshot.effects[]`: active skill effects. First appearance is full (`uid,type,x,y,owner,age,duration,r,level` plus `z,k,s,o` for zones); later entries are compact (`uid,x,y,age,duration,r,target` and `o` only when it changed). An effect missing from the list has ended.
+- `snapshot.timeStop`, `snapshot.fourthWall`: global battle state.
+- `fighters[].fx` / `fighters[].fxDel`: character state that changed since the last snapshot (full on the first snapshot) and keys removed.
+- `projectiles[]` may carry small render hints (`oc, vol, vi, vn, lq, fk, fform, sv …`).
+- New events: `sfx {name,args[]}` (play the original sound function), `skill`/`ultimate` with `cast:true` on the cast moment, `wall {side}`, `collision {hitSpeed}`, `source_particle`, `source_text`, `source_visual`, `source_card`, `summon`, `summon_end`, `form_change`.

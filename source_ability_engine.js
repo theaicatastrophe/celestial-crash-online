@@ -20,11 +20,11 @@ function createSourceAbilityEngine(api) {
   const GK_PAL={void:'#05070c',bone:'#f4f0e8',cyan:'#5ce1ff',ice:'#c8f7ff',ember:'#ff9a5c',ink:'#0a0c12'};
   const MT_PAL={void:'#070A18',deep:'#0A0F24',blue:'#4A8CFF',indigo:'#7C5CFF',violet:'#A86BFF',magenta:'#FF5CA1',cyan:'#7EF5FF',white:'#F4F6FF',paper:'#EAF0FF'};
   const DOLA_PAL={violet:'#8B5CF6',deep:'#6D28D9',lavender:'#C4B5FD',mint:'#5EEAD4',gold:'#FCD34D',ink:'#150A24',paper:'#F3E8FF',rose:'#A78BFA'};
-  const FO={hy:'#79c8ff',deep:'#16307f',navy:'#070d2a',pearl:'#f3f9ff',ice:'#cfeeff',gold:'#ffd98a',amber:'#ffb55c',sin:'#ff6f93',violet:'#9a8cff',skin:'#ffe6da'};
   const PX={teal:'#52E0D0',ice:'#E6FFF8',ink:'#061B1B',gold:'#EBCB8B',dim:'#247D79'};
   const LL={K:'#ffd27a',Q:'#ff2e4d',W:'#fff4e2',ink:'#150d24',ruby:'#7a0820',vio:'#a98bff'};
   const LLP={pawn:'♟',knight:'♞',bishop:'♝',rook:'♜',queen:'♛',king:'♚'};
   const MC={steel:'#9aa4b8',hi:'#e9eef9',dark:'#4b5468',vio:'#3b2a4a',vio2:'#7c5aa6',red:'#ff4d6d',hot:'#ffc2cf',ink:'#0f0814'};
+  const FO={hy:'#79c8ff',deep:'#16307f',navy:'#070d2a',pearl:'#f3f9ff',ice:'#cfeeff',gold:'#ffd98a',amber:'#ffb55c',sin:'#ff6f93',violet:'#9a8cff',skin:'#ffe6da'};
   const SR={ivory:'#f6efe2',cloud:'#e8edf4',iris:'#5ec0e8',ember:'#c8452d',gold:'#ffb020',hot:'#fff2c4',ink:'#2a1410',coal:'#ff7a1a',deep:'#7b2a1c'};
   const SR_RING=116;
   const NL={ink:'#040406',bone:'#f4f0e6',ash:'#8f8d88',pg:'#f7f4ea',ck:'#d3d0c8'};
@@ -78,6 +78,24 @@ function createSourceAbilityEngine(api) {
     if (!roomRef) return;
     api.emitEvent(roomRef, type, payload);
   }
+  // Audio helpers from the V45 source are browser-only. On the server they become
+  // small 'sfx' events; the client plays the original sound function by name.
+  const sfxLast = new Map();
+  function sfx(name, args) {
+    if (!roomRef) return;
+    const now = roomRef.sim.elapsed || 0, key = name + '@' + roomRef.id;
+    if (now - (sfxLast.get(key) ?? -9) < 0.06) return;
+    sfxLast.set(key, now);
+    if (sfxLast.size > 400) sfxLast.clear();
+    const clean = [];
+    for (const a of (args || []).slice(0, 6)) {
+      if (typeof a === 'number' && Number.isFinite(a)) clean.push(Math.round(a * 1000) / 1000);
+      else if (typeof a === 'boolean') clean.push(a);
+      else if (typeof a === 'string') clean.push(a.slice(0, 24));
+      else clean.push(null);
+    }
+    emit('sfx', { name, args: clean, ownerUid: currentOwner?.uid || null });
+  }
   function withReason(reason, index, owner, fn) {
     const old = [currentReason, currentIndex, currentOwner];
     currentReason = reason || 'impact'; currentIndex = Number.isInteger(index) ? index : 0; currentOwner = owner || null;
@@ -113,25 +131,7 @@ function createSourceAbilityEngine(api) {
   function floatText(x, y, text, color = '#fff', size = 12) {
     emit('source_text', { ownerUid: currentOwner?.uid || null, x, y, text: String(text).slice(0, 60), color, size });
   }
-  // Copy only plain, JSON-safe visual options (numbers, booleans, short strings,
-  // small number arrays). Functions such as `hit` callbacks and fighter objects
-  // are dropped; fighter references are already uid strings in the V45 handlers.
-  function visualOpts(opts) {
-    const out = {};
-    if (!opts || typeof opts !== 'object') return out;
-    let n = 0;
-    for (const key of Object.keys(opts)) {
-      if (n >= 40) break;
-      const v = opts[key];
-      if (typeof v === 'number') { if (Number.isFinite(v)) { out[key] = Math.round(v * 1000) / 1000; n++; } }
-      else if (typeof v === 'boolean') { out[key] = v; n++; }
-      else if (typeof v === 'string') { out[key] = v.slice(0, 48); n++; }
-      else if (Array.isArray(v) && v.length <= 8 && v.every(item => typeof item === 'number' && Number.isFinite(item))) { out[key] = v.map(item => Math.round(item * 1000) / 1000); n++; }
-      else if (v && typeof v === 'object' && typeof v.uid === 'string') { out[key] = v.uid; n++; }
-    }
-    return out;
-  }
-  function createEffect(type, x, y, owner, opts = {}, quiet = false) {
+  function createEffect(type, x, y, owner, opts = {}) {
     if (!roomRef) return null;
     const effect = {
       uid: crypto.randomUUID(), type, x, y, owner: owner?.uid || null, ownerId: owner?.id || null,
@@ -142,12 +142,7 @@ function createSourceAbilityEngine(api) {
       source: 'core', options: { ...opts }, once: false
     };
     effects.push(effect);
-    // The event now carries the real effect name, size and duration so the client can
-    // draw the original V45 effect instead of a generic "hit" flash.
-    if (!quiet) emit(opts.ultimate ? 'ultimate' : 'skill', {
-      ownerUid: effect.owner, targetUid: effect.target, x, y, effect: type, ability: type, skillIndex: currentIndex, source: 'v45',
-      vfx: true, r: effect.r, duration: effect.duration, opts: visualOpts(opts)
-    });
+    emit(opts.ultimate ? 'ultimate' : 'skill', { ownerUid: effect.owner, targetUid: effect.target, x, y, effect: type, ability: type, skillIndex: currentIndex, source: 'v45' });
     return effect;
   }
   function shoot(owner, target, type, damage, speed = 300, opts = {}) {
@@ -164,6 +159,13 @@ function createSourceAbilityEngine(api) {
       special: !!opts.special, hit: opts.hit || null
     };
     projectiles.push(p);
+    owner.projectileCount = (owner.projectileCount || 0) + 1;
+    if (owner.id === 'quasar' && owner.projectileCount % 4 === 0) {
+      p.damage *= 1.55; p.rawDamage = p.damage; p.pierce = 1;
+      const ray = createEffect('criticalray', owner.x, owner.y, owner, { r: 30, duration: 0.55 });
+      if (ray) ray.angle = angle;
+      floatText(owner.x, owner.y - 22, 'REDSHIFT!', '#fff0a5', 11);
+    }
     emit(currentReason === 'ultimate' ? 'ultimate' : currentReason === 'skill' ? 'skill' : 'attack', {
       ownerUid: owner.uid, targetUid: target.uid, x: owner.x, y: owner.y, targetX: target.x, targetY: target.y,
       skillIndex: p.skillIndex, projectileType: p.type, ability: p.type, source: 'v45'
@@ -182,17 +184,11 @@ function createSourceAbilityEngine(api) {
   }
   function zD(f, angle, speed, duration) { f.vx = Math.cos(angle) * speed; f.vy = Math.sin(angle) * speed; f.dash = Math.max(f.dash || 0, duration || 0.3); }
   function zE(kind, owner, x, y, opts = {}) {
-    const effect = createEffect('source_zone', x, y, owner, { r: opts.r || 60, duration: opts.d || 1, damage: opts.dmg || 0, interval: opts.iv || 0.4 }, true);
+    const effect = createEffect('source_zone', x, y, owner, { r: opts.r || 60, duration: opts.d || 1, damage: opts.dmg || 0, interval: opts.iv || 0.4 });
     if (!effect) return null;
     effect.z = true; effect.s = owner?.id; effect.k = kind; effect.o = { ...opts, reason: currentReason, sourceIndex: currentIndex };
     effect.reason = currentReason; effect.sourceIndex = currentIndex; effect.tick = 0;
     effect.target = opts.tg || opts.ft || null;
-    // Send the original V45 zone (kind + options) to the clients so they can run the
-    // exact same offline drawing code (beams, bursts, rings, tiles, domains...).
-    emit('source_zone', {
-      ownerUid: owner?.uid || null, k: kind, x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10,
-      skillIndex: currentIndex, o: visualOpts({ ...opts, r: opts.r || 60, d: opts.d || 1 })
-    });
     return effect;
   }
   function zP(owner, target, damage, speed, opts = {}) { return shoot(owner, target, 'zp', damage, speed, opts); }
@@ -239,7 +235,7 @@ function createSourceAbilityEngine(api) {
   function choice(list) { return list[Math.floor(Math.random() * list.length)]; }
   function ext(x) { return x; }
   function card(f, title) { emit('source_card', { ownerUid: f?.uid || null, title: String(title || '').slice(0, 50) }); }
-  function playSfx() {}
+  function playSfx(...a) { sfx('playSfx', a); }
   const PF = { kick: pFX };
   const GL = { hit() {}, kick() {} };
   const $ = () => ({ style: { setProperty() {} }, textContent: '', setAttribute() {} });
@@ -248,7 +244,7 @@ function createSourceAbilityEngine(api) {
   function btLive(f) { return !!(f && !f.dead && (f.hp > 0)); }
   function btPred(f) { return findTarget(f); }
   function btSpend(f) { const n = f?.btLone || 0; if (f) f.btLone = 0; return 1 + n / 100 * 0.6; }
-  function cgChime() {} function clAnswerSfx() {} function clPing() {} function dolaChime() {} function gkChime() {} function mtAnswerSfx() {} function mtChime() {} function nl2Sound() {} function pxSound() {} function srEyesSfx() {} function srLanceSfx() {} function srTing() {} function svSnd() {} function mcSnapSfx() {} function eiSound() {} function foSound() {} function llSound() {} function btSound() {} function nlSound() {} function odSound() {}
+  function cgChime(...a) { sfx('cgChime', a); } function clAnswerSfx(...a) { sfx('clAnswerSfx', a); }function dolaChime(...a) { sfx('dolaChime', a); } function gkChime(...a) { sfx('gkChime', a); } function mtAnswerSfx(...a) { sfx('mtAnswerSfx', a); } function mtChime(...a) { sfx('mtChime', a); } function nl2Sound(...a) { sfx('nl2Sound', a); } function pxSound(...a) { sfx('pxSound', a); } function srEyesSfx(...a) { sfx('srEyesSfx', a); } function srLanceSfx(...a) { sfx('srLanceSfx', a); } function srTing(...a) { sfx('srTing', a); } function svSnd(...a) { sfx('svSnd', a); } function mcSnapSfx(...a) { sfx('mcSnapSfx', a); } function eiSound(...a) { sfx('eiSound', a); } function foSound(...a) { sfx('foSound', a); } function llSound(...a) { sfx('llSound', a); } function btSound(...a) { sfx('btSound', a); } function nlSound(...a) { sfx('nlSound', a); } function odSound(...a) { sfx('odSound', a); }
   function llSX() { return ARENA.w/8; } function llSY() { return ARENA.h/8; }
   function llSqAt(i,j) { return {x:ARENA.x+(i+.5)*llSX(),y:ARENA.y+(j+.5)*llSY(),i,j}; }
   function llTile(f,x,y) { return zE('lltile',f,x,y,{r:40,d:1.6,dmg:6,iv:.35,s:26,q:0,slow:.35}); }
@@ -261,108 +257,57 @@ function createSourceAbilityEngine(api) {
   function nlB(f,x,y,r,opts={}) { return zE('nlburst',f,x,y,Object.assign({r:r||70,d:.75},opts)); }
   function nlCR(i) { const size=ARENA.w/7; return {x:ARENA.x+(i%7)*size,y:ARENA.y+Math.floor(i/7)*size,s:size}; }
   function nlCell(x,y) { const size=ARENA.w/7;return clamp(Math.floor((y-ARENA.y)/size),0,6)*7+clamp(Math.floor((x-ARENA.x)/size),0,6); }
-  function nlClear(f) { if (f) { f.invuln = Math.max(f.invuln || 0, 0.2); f.stun = 0; } }
+
   function nlErase(f,t,n=1) { if(!f||!t||f.dead||t.dead||t.twin)return;t.nlEr=(t.nlEr||0)+n;t.nlErLast=gameTime;hurt(t,Math.min(5,2*n),f,'skill'); }
   function nlFoes(f) { return fighters.filter(q=>q!==f&&!q.dead&&api.isEnemy(f,q,roomRef)); }
   function nlIn(x,y,m=30) { return {x:clamp(x,ARENA.x+m,ARENA.x+ARENA.w-m),y:clamp(y,ARENA.y+m,ARENA.y+ARENA.h-m)}; }
-  function nlTear(f, t, damage = 9) { if (t) hurt(t, damage, f, 'skill'); }
+
   function nlHit(p,t,owner) { if(owner&&owner.id==='nullity')nlErase(owner,t,1); }
   function nlU(f) { return effects.find(e=>e.type==='nlult'&&e.owner===f?.uid&&e.age<e.duration)||null; }
   function nlVoidOn(f) { if(f)f.invuln=Math.max(f.invuln||0,.4); }
-  function foAct(f, stage) { if (f) { f.focalorsStage = stage ?? ((f.focalorsStage || 0) + 1) % 3; emit('form_change', { ownerUid: f.uid, form: f.focalorsStage }); } }
-  function foApplause(f, t) { if (t) hurt(t, 5, f, 'skill'); }
+
+
   function foBurst(f, c, damage=9.5, radius=62, delay=0.5, ult=false, opts={}) { const p = c && Number.isFinite(c.x) ? c : {x:f?.x||ARENA.x+ARENA.w/2,y:f?.y||ARENA.y+ARENA.h/2}; const e = zE('foburst', f, p.x, p.y, Object.assign({r:radius||62,d:(delay||0)+0.65,dmg:damage,once:1,iv:0.05,dl:delay||0,kb:130},opts)); if(e){e.v10Skill=true;e.v10Ult=!!ult;} return e; }
   function foFoes(f) { return nlFoes(f); }
   function foLine(f,a,b,damage=8,delay=.3,width=12,ult=false,opts={}){const e=zE('foline',f,a.x,a.y,Object.assign({r:20,d:delay+.5,x2:b.x,y2:b.y,w:width,dmg:damage,once:1,iv:.05,dl:delay,kb:60},opts));e.v10Skill=true;e.v10Ult=!!ult;return e;}
   function foM(f) { return f && f.foForm ? 1.08 : 1.4; }
   function foPred(t, seconds=0) { if (!t) return {x:ARENA.x+ARENA.w/2,y:ARENA.y+ARENA.h/2}; return {x:clamp(t.x+(t.vx||0)*seconds,ARENA.x+44,ARENA.x+ARENA.w-44),y:clamp(t.y+(t.vy||0)*seconds,ARENA.y+44,ARENA.y+ARENA.h-44)}; }
-  function foStage(f) { return f?.focalorsStage || 0; }
-  function eiB(f, x, y, r, d) { return zE('burst', f, x, y, { r: r || 70, d: 0.5, dmg: d || 0, once: 1 }); }
+
+
   function eiFoes(f) { return fighters.filter(q=>q!==f&&!q.dead&&api.isEnemy(f,q,roomRef)); }
   function eiIl(f,x,y,opts={}) { if(!f)return null;if(!f.eiIl)f.eiIl=[];const il=Object.assign({x,y,vx:0,vy:0,r:21,age:0,life:4,k:'decoy',pose:0,flash:0,seed:Math.random()*99,tc:.3},opts);f.eiIl.push(il);if(f.eiIl.length>48)f.eiIl.shift();return il; }
   function eiIn(x,y,m=30) { return {x:clamp(x,ARENA.x+m,ARENA.x+ARENA.w-m),y:clamp(y,ARENA.y+m,ARENA.y+ARENA.h-m)}; }
   function eiL(f,a,b,dm,dl,w=12,opts={}) { const e=zE('eiline',f,a.x,a.y,Object.assign({r:20,d:(dl||0)+.5,x2:b.x,y2:b.y,w,dl,kb:60},dm?{dmg:dm,once:1,iv:.05}:{fake:1},opts));e.v10Skill=true;e.v10Ult=!!opts.ult;return e; }
-  function eiSwarm(f, t) { if (t) fan(f, t, 4, 260, 4.5, 0.3, { r: 5, homing: 0.2 }); }
+
   function eiU(f) { return effects.find(e=>e.type==='eiult'&&e.owner===f?.uid&&e.age<e.duration)||null; }
   function foE(f, x, y, o = {}) { return zE(o.k || 'ring', f, x, y, o); }
-  function odE(f, x, y, o = {}) { return zE(o.k || 'burst', f, x, y, o); }
-  // In V45 `odAct(f, kind, duration)` is only a dance *pose* (dash / cast / bow / ult). It must not
-  // change Odette's act: her act follows her HP (see odettePhase). The pose is sent to the clients.
-  function odAct(f, kind, duration) {
-    if (!f) return;
-    if (typeof kind === 'string') { emit('source_pose', { ownerUid: f.uid, k: kind, d: Number(duration) || 0.5 }); return; }
-    if (Number.isInteger(kind)) { f.odP = clamp(kind, 0, 2); f.sourceVariant = f.odetteAct = f.odP; emit('form_change', { ownerUid: f.uid, form: f.odP }); }
-  }
-  const OD_CUT = 4.2;
-  // Odette's three acts follow her HP like the offline game: Act I >= 67%, Act II >= 34%, else Act III.
-  // Changing acts starts a 4.2 s cutscene (invulnerable, pulled to the stage centre), the acts swap
-  // halfway through, then she gets a short lock + invulnerability.
-  function odettePhase(room, f, dt) {
-    if (f.odP === undefined) { f.odP = 0; f.odShow = 0; f.odLock = 0; f.odCut = 0; f.odCutT = 0; f.odNext = 0; f.odSwapped = false; }
-    const now = room.sim.elapsed;
-    if (f.odCut > 0) {
-      f.odCutT += dt;
-      const k = 1 - Math.exp(-dt * 3.2);
-      f.x += (ARENA.x + ARENA.w / 2 - f.x) * k; f.y += (ARENA.y + ARENA.h / 2 + 14 - f.y) * k;
-      f.vx = 0; f.vy = 0; f.dash = 0;
-      f.invuln = Math.max(f.invuln || 0, 0.3); f.attackCD = Math.max(f.attackCD || 0, 0.3);
-      const u = f.odCutT / OD_CUT;
-      if (!f.odSwapped && u >= 0.5) {
-        f.odSwapped = true; f.odShow = f.odNext;
-        zE('odshift', f, f.x, f.y, { r: 230, d: 1.4, c: f.odNext });
-        emit('source_visual', { ownerUid: f.uid, fx: 'flash', flash: 0.85, shake: 16 });
-      }
-      if (f.odCutT >= OD_CUT) {
-        f.odCut = 0; f.odP = f.odNext; f.odShow = f.odNext; f.odLock = now + 3;
-        f.sourceVariant = f.odetteAct = f.odP; f.invuln = Math.max(f.invuln || 0, 0.9);
-        emit('form_change', { ownerUid: f.uid, form: f.odP });
-      }
-      return;
-    }
-    const ratio = f.hp / f.maxHp, next = ratio >= 0.67 ? 0 : ratio >= 0.34 ? 1 : 2;
-    if (now >= f.odLock && next > f.odP) {
-      f.odCut = OD_CUT; f.odCutT = 0; f.odNext = next; f.odSwapped = false;
-      f.invuln = Math.max(f.invuln || 0, OD_CUT + 0.3); f.dash = 0;
-      floatText(f.x, f.y - (f.r || 22) - 60, 'THE PERFORMANCE TURNS…', '#ffe9a8', 12);
-      emit('odette_cut', { ownerUid: f.uid, from: f.odP, to: next });
-      return;
-    }
-    // Act III dances faster and recovers skills sooner, Act I recovers skills slightly slower.
-    if (f.odP === 2) {
-      f.x = clamp(f.x + f.vx * dt * 0.3, ARENA.x + (f.r || 22), ARENA.x + ARENA.w - (f.r || 22));
-      f.y = clamp(f.y + f.vy * dt * 0.3, ARENA.y + (f.r || 22), ARENA.y + ARENA.h - (f.r || 22));
-      f.attackCD -= dt * 0.5;
-      for (let i = 0; i < 3; i++) f.skillCD[i] -= dt * 0.35;
-      v13_3GainUlt(f, dt * 1.4);
-    } else if (f.odP === 0) {
-      for (let i = 0; i < 3; i++) f.skillCD[i] += dt * 0.1;
-    }
-  }
-  function odHeal(f, n) { return heal(f, n || 5); }
-  function odPred(f) { return findTarget(f); }
-  function odSpark(f, x, y, n = 4) { spawnBurst(x, y, f, n); }
-  function odFan(f, t, n = 3, speed = 300, damage = 5, spread = 0.2) { return fan(f, t || findTarget(f), n, speed, damage, spread); }
-  function svE(f, x, y, o = {}) { return zE(o.k || 'burst', f, x, y, o); }
-  function svMine(f, x, y, damage = 7) { return zE('burst', f, x, y, { r: 55, d: 0.8, dmg: damage, once: 1, dl: 0.4, kb: 90 }); }
-  function svPred(f) { return findTarget(f); }
+
+
+
+
+
+
+
+
+
   function srFoe(f) { return findTarget(f); }
   function srFoes(f) { return nlFoes(f); }
   function srLive(f) { return !!(f && !f.dead && f.hp > 0); }
   function srClearField(f) { if (f) { f.rooted = 0; f.slow = 0; f.stun = 0; } }
-  function srPosture(f, value) { if (f) f.seraphimPosture = value ?? ((f.seraphimPosture || 0) + 1) % 3; }
-  function srEyesSfx() {} function srLanceSfx() {} function srTing() {}
-  function foPredSfx() {} function clPing() {} function clAnswerSfx() {} function clAnswerSfx() {}
+
+  function srEyesSfx(...a) { sfx('srEyesSfx', a); } function srLanceSfx(...a) { sfx('srLanceSfx', a); } function srTing(...a) { sfx('srTing', a); }
+  function foPredSfx(...a) { sfx('foPredSfx', a); }function clAnswerSfx(...a) { sfx('clAnswerSfx', a); } function clAnswerSfx(...a) { sfx('clAnswerSfx', a); }
   function pxBurst(f,c,dm,ult=false,r=72){return zE('pxverdict',f,c.x,c.y,{r:r||72,d:.9,dmg:dm||0,once:1,dl:.03,iv:.05,kb:125,ult});}
   function pxLine(f,a,b,dm,ult=false,w=12){return zE('pxbeam',f,a.x,a.y,{r:20,d:.48,x2:b.x,y2:b.y,w,dmg:dm||0,once:1,iv:.05,dl:.02,kb:36,ult});}
   function pxNodes(c,r,angle){return Array.from({length:3},(_,i)=>({x:clamp(c.x+Math.cos(angle+i*Math.PI*2/3)*r,ARENA.x+14,ARENA.x+ARENA.w-14),y:clamp(c.y+Math.sin(angle+i*Math.PI*2/3)*r,ARENA.y+14,ARENA.y+ARENA.h-14)}));}
   function pxPredict(t,seconds=0){return {x:clamp(t.x+t.vx*seconds,ARENA.x+42,ARENA.x+ARENA.w-42),y:clamp(t.y+t.vy*seconds,ARENA.y+42,ARENA.y+ARENA.h-42)};}
-  function foAct2(f, t) { return foAct(f, t); }
+
   function mcLive(f) { return srLive(f); }
-  function mcClank() {}
+  function mcClank(...a) { sfx('mcClank', a); }
   function mcEase(u){u=clamp(u,0,1);return u*u*(3-2*u);}
   function mcUnleash(f,dur=4,ult=false){if(!f||f.dead)return;f.mcSeals=0;f.mcUnr=dur;f.mcUnrMax=dur;f.mcRecoil=0;f.mcStrain=0;if(ult)f.mcBrk=[gameTime,gameTime,gameTime,gameTime,gameTime];zE('mcunleash',f,f.x,f.y,{r:190,d:1.1,fol:1});floatText(f.x,f.y-f.r-52,'UNRESTRAINED',MC.red,15);}
-  function srEyesSfx2() {}
-  function nl2Sound2() {}
+  function srEyesSfx2(...a) { sfx('srEyesSfx', a); }
+  function nl2Sound2(...a) { sfx('nl2Sound', a); }
   function clPing2() {}
   function pSumSafe(f, name, life, a, opts) { return pSum(f, name, life, a, opts); }
 
@@ -402,8 +347,8 @@ function createSourceAbilityEngine(api) {
 
   function btPred2(f) { return findTarget(f); }
   function btLive2(f) { return srLive(f); }
-  function clPing(f, t, damage = 6) { if (t) hurt(t, damage, f, 'skill'); }
-  function clAnswerSfx2() {} function cgAnswerSfx() {} function mtPing() {} function dolaFX() {} function eiFx() {} function foFX() {} function llFX() {} function mcFX() {} function nlFX() {} function pxFX() {} function srFX() {} function svFX() {}
+
+  function clAnswerSfx2(...a) { sfx('clAnswerSfx', a); } function cgAnswerSfx(...a) { sfx('cgAnswerSfx', a); } function mtPing(...a) { sfx('mtPing', a); } function dolaFX() {} function eiFx() {} function foFX() {} function llFX() {} function mcFX() {} function nlFX() {} function pxFX() {} function srFX() {} function svFX() {}
 
   function stepScheduled(room, dt) {
     syncRoom(room); gameTime = room.sim.elapsed;
@@ -508,7 +453,7 @@ function createSourceAbilityEngine(api) {
     const entry = CATALOG.fighters.find(x => x.id === f.id);
     if (!entry) return null;
     let ix = Number.isInteger(f.sourceVariant) ? f.sourceVariant : 0;
-    if (f.id === 'odette') ix = clamp(Number.isInteger(f.odP) ? f.odP : 0, 0, 2);
+    if (f.id === 'odette') ix = clamp(Number.isInteger(f.odetteAct) ? f.odetteAct : ix, 0, 2);
     if (f.id === 'lovers') ix = clamp(Number.isInteger(f.loversLead) ? f.loversLead : ix, 0, 1);
     return entry.variants[ix] || entry.variants[0] || null;
   }
@@ -1417,11 +1362,17 @@ Object.assign(SOURCE_ZS,{
     const handlerName = handlerFor(f, index); if (!handlerName) return false;
     const dist = distanceTo(f, target), ang = Math.atan2(target.y - f.y, target.x - f.x);
     const reason = reasonForIndex(index);
-    emit(index === 3 ? 'ultimate' : 'skill', { ownerUid: f.uid, targetUid: target.uid, x: f.x, y: f.y, targetX: target.x, targetY: target.y, skillIndex: index, ability: handlerName, source: 'v45' });
+    emit(index === 3 ? 'ultimate' : 'skill', { ownerUid: f.uid, targetUid: target.uid, x: f.x, y: f.y, targetX: target.x, targetY: target.y, skillIndex: index, ability: handlerName, source: 'v45', cast: true });
     return withReason(reason, index, f, () => {
       const fn = SOURCE_ZS[handlerName];
       if (typeof fn === 'function') {
-        try { fn(f, target, ang, dist); }
+        try {
+          fn(f, target, ang, dist);
+          // V45 castSkill extras that follow every source-handler skill.
+          if (index === 3) zE('con', f, ARENA.x + ARENA.w / 2, ARENA.y + ARENA.h / 2, { r: 300, d: 2.8 });
+          if (f.id === 'aquarius') zE('field', f, f.x, f.y, { r: 46, d: 2.2, slow: 0.6, iv: 0.4 });
+          spawnBurst(f.x, f.y, f, 6);
+        }
         catch (error) {
           if (api.strict) throw new Error(`${f.id}.${handlerName}: ${error?.stack || error}`);
           api.emitEvent(room, 'ability_error', { fighterId: f.id, handler: handlerName, message: String(error?.message || error).slice(0, 120) });
@@ -1509,7 +1460,7 @@ Object.assign(SOURCE_ZS,{
       }
       if (f.id === 'odette') {
         if ((f.odCut || 0) > 0) { f.attackCD = 0.3; return true; }
-        f.attackCD = 1.05 + rand(-0.05, 0.08); odAct(f, 'cast', 0.4);
+        f.attackCD = 1.05 + rand(-0.05, 0.08); f.odetteAct = 1;
         const count = (f.odP | 0) === 2 ? 3 : 1;
         fan(f, target, count, 310, 3.8, 0.16, { r: 5, life: 1.9, homing: 0.2 });
         return true;
@@ -1541,12 +1492,268 @@ Object.assign(SOURCE_ZS,{
       return true;
     });
   }
+  // ======================================================================
+  // Faithful ports of the V45 per-character helpers and per-frame logic.
+  // (The first online versions used approximations; these follow the source.)
+  // ======================================================================
+  const SV_COL = ['#9a6a3a','#a6a6a6','#f0f0f0','#ffd23f','#4ee3e3'], SV_NAME = ['WOODEN','STONE','IRON','GOLDEN','DIAMOND'];
+  const SV_POW = [.85,1,1.15,1.15,1.35], SV_MAT = ['WOOD','STONE','IRON','GOLD','DIAMOND'];
+  const OD_CUT = 4.2;
+  const OD_COL = [['#cfe9ff','#8fd0ff'],['#c23bff','#ff2d6f'],['#ffe6a8','#7ad7ff']];
+  const OD_NAME = ['ACT I \u2014 STARLIGHT SWAN','ACT II \u2014 ECLIPSE SWAN','ACT III \u2014 ODILE \u2014 ASTRAL PRIMA'];
+  const srEase = u => u * u * (3 - 2 * u);
+  const srF = uid => fighters.find(q => q.uid === uid);
+  function srChoir(...a) { sfx('srChoir', a); }
+  function srCrySfx(...a) { sfx('srCrySfx', a); }
+  function foApplause(...a) { sfx('foApplause', a); }
+  function clPing(...a) { sfx('clPing', a); }
+
+  // ---- Odette ----
+  function odPred(t, s) { return { x: clamp(t.x + (t.vx || 0) * s, ARENA.x + 30, ARENA.x + ARENA.w - 30), y: clamp(t.y + (t.vy || 0) * s, ARENA.y + 30, ARENA.y + ARENA.h - 30) }; }
+  function odE(k, f, x, y, o, u) { const e = zE(k, f, x, y, o); if (e) { e.v10Skill = true; e.v10Ult = !!u; } return e; }
+  function odAct(f, k, d) { if (f) f.odAct = { k, t: 0, d: d || 0.6 }; }
+  function odHeal(f, n) { if (!f || f.dead) return; const b = f.hp; f.hp = Math.min(f.maxHp, f.hp + n); if (f.hp > b + 0.4) floatText(f.x, f.y - 24, '+' + Math.round(f.hp - b), '#8dffd0', 12); }
+  function odSpark() { /* cosmetic star dust is drawn by the client */ }
+  let odVol = 0;
+  function odFan(f, t, n, sp, dm, sg, hom, c) {
+    const vol = ++odVol;
+    const out = fan(f, t, n, sp, dm, sg, { r: 5, life: 2.1, homing: hom }) || [];
+    out.forEach((p, i) => { if (!p) return; p.s = 'odette'; p.oc = c; p.vol = vol; p.vi = i; p.vn = out.length; });
+  }
+  function odShift(f, P, quiet, afterCut) {
+    const old = f.odP | 0;
+    f.odP = P; f.odShow = P; f.odLock = gameTime + 3; f.pow = [.7, 1, 1.7][P];
+    f.sourceVariant = P; f.odetteAct = P;
+    emit('form_change', { ownerUid: f.uid, form: P });
+    if (quiet) return;
+    floatText(f.x, f.y - f.r - 58, OD_NAME[P], OD_COL[P][0], 12);
+    zE('odshift', f, f.x, f.y, { r: 190, d: 1.3, c: P });
+    f.invuln = Math.max(f.invuln || 0, 0.5); f.odSpin = 1.2;
+    if (P > old) { f.shield = Math.min(26, (f.shield || 0) + 12); for (let i = 0; i < 3; i++) f.cooldowns[i] = Math.min(f.cooldowns[i], 1 + i * 0.7); }
+    if (P === 2) floatText(f.x, f.y - f.r - 72, 'LIFE STEAL AWAKENED', OD_COL[2][1], 10);
+    for (let i = 0; i < 4; i++) particle(f.x, f.y, f, 1, 'ultimate');
+    emit('source_visual', { ownerUid: f.uid, flash: afterCut ? 0.6 : 0.25 });
+  }
+  function odBeginCut(f, P) {
+    if (f.odCut > 0) return;
+    f.odCut = OD_CUT; f.odCutT = 0; f.odNext = P; f.odFrom = f.odP | 0; f.odSwapped = false;
+    f.invuln = Math.max(f.invuln || 0, OD_CUT + 0.3); f.dash = 0; f.odAct = null;
+    floatText(f.x, f.y - f.r - 60, 'THE PERFORMANCE TURNS\u2026', OD_COL[P][0], 12);
+  }
+  function odTick(f, dt) {
+    if (f.odP === undefined) { f.odP = 0; f.odShow = 0; f.odLock = 0; f.odCut = 0; f.odCutT = 0; f.odSpin = 0; f.odAct = null; f.odFace = 1; }
+    f.odSpin = Math.max(0, (f.odSpin || 0) - dt);
+    if (f.odAct) { f.odAct.t += dt; if (f.odAct.t > f.odAct.d) f.odAct = null; }
+    if (f.vx > 8) f.odFaceT = 1; else if (f.vx < -8) f.odFaceT = -1;
+    f.odFace += ((f.odFaceT || 1) - f.odFace) * Math.min(1, dt * 7);
+    if (f.odCut > 0) {
+      f.odCutT += dt; const u = clamp(f.odCutT / OD_CUT, 0, 1); f.odCut = Math.max(0, OD_CUT - f.odCutT);
+      const k = 1 - Math.exp(-dt * 3.2); f.x += (W / 2 - f.x) * k; f.y += (H / 2 + 14 - f.y) * k;
+      f.vx = 0; f.vy = 0; f.dash = 0; f.invuln = Math.max(f.invuln || 0, 0.3); f.attackCD = Math.max(f.attackCD, 0.3);
+      if (!f.odSwapped && u >= 0.5) { f.odSwapped = true; f.odShow = f.odNext; zE('odshift', f, f.x, f.y, { r: 230, d: 1.4, c: f.odNext }); }
+      if (f.odCutT >= OD_CUT) { f.odCut = 0; odShift(f, f.odNext, false, true); f.invuln = Math.max(f.invuln || 0, 0.9); }
+      return;
+    }
+    const r = f.hp / f.maxHp, Pn = r >= 0.67 ? 0 : r >= 0.34 ? 1 : 2;
+    if (gameTime >= f.odLock && Pn !== (f.odP | 0)) { if (Pn > (f.odP | 0)) odBeginCut(f, Pn); }
+    if ((f.odP | 0) === 2) {
+      f.x = clamp(f.x + f.vx * dt * 0.3, ARENA.x + f.r, ARENA.x + ARENA.w - f.r); f.y = clamp(f.y + f.vy * dt * 0.3, ARENA.y + f.r, ARENA.y + ARENA.h - f.r);
+      f.attackCD -= dt * 0.5; for (let i = 0; i < 3; i++) f.cooldowns[i] -= dt * 0.35; v13_3GainUlt(f, dt * 1.4);
+    } else if ((f.odP | 0) === 0) { for (let i = 0; i < 3; i++) f.cooldowns[i] += dt * 0.1; }
+  }
+
+  // ---- Steve ----
+  const svAngLerp = (a, b, k) => a + Math.atan2(Math.sin(b - a), Math.cos(b - a)) * k;
+  function svPred(t, s) { return { x: clamp(t.x + (t.vx || 0) * s, ARENA.x + 30, ARENA.x + ARENA.w - 30), y: clamp(t.y + (t.vy || 0) * s, ARENA.y + 30, ARENA.y + ARENA.h - 30) }; }
+  function svE(k, f, x, y, o, u) { const e = zE(k, f, x, y, o); if (e) { e.v10Skill = true; e.v10Ult = !!u; } return e; }
+  function svRoll() { const w = [3, 3, 2.4, 1.8, 1.2]; let r = Math.random() * 11.4, m = 0; while (m < 4 && (r -= w[m]) > 0) m++; return m; }
+  function svEnsure(f) { if (!Array.isArray(f.stM) || f.stM.length < 5) f.stM = [0, 0, 0, 0, 0]; if (typeof f.stT !== 'number') f.stT = 0; if (!f.pow) f.pow = SV_POW[f.stT]; }
+  function svMine(f, n, mm, sx, sy) {
+    if (!f || f.dead) return; svEnsure(f);
+    for (let i = 0; i < (n || 1); i++) {
+      const m = (mm != null && i === 0) ? mm : svRoll(); f.stM[m]++;
+      floatText(f.x + rand(-10, 10), f.y - f.r - 12, '+1 ' + SV_MAT[m], SV_COL[m], 10);
+      const x0 = sx != null ? sx : f.x + Math.cos(f.svAim || 0) * (f.r + 14), y0 = sy != null ? sy : f.y + Math.sin(f.svAim || 0) * (f.r + 14);
+      zE('svdrop', f, x0, y0, { r: 8, d: 0.55, m, x0, y0, pa: rand(0, 6.28) });
+    }
+    for (let i = 0; i < 4; i++) particle(f.x, f.y, f, 1, 'cast');
+    v13_3GainUlt(f, 5, 'mine'); if (f.svMine > 0) f.shield = Math.min(26, (f.shield || 0) + 2);
+    const nx = f.stT + 1;
+    if (nx < 5 && f.stM[nx] >= 2) {
+      f.stM[nx] -= 2; f.stT = nx; f.pow = SV_POW[nx]; f.shield = Math.min(26, (f.shield || 0) + 6);
+      floatText(f.x, f.y - f.r - 40, 'CRAFTED ' + SV_NAME[nx] + ' TOOLS', SV_COL[nx], 12);
+      zE('svblast', f, f.x, f.y, { r: 62, d: 0.65, v: 'craft', col: SV_COL[nx] }); f.svPop = 0.5; svSnd('craft');
+      if (!(f.dash > 0 || f.svFly > 0 || f.svZ > 4 || f.svAnv > 0)) {
+        f.svCraft = 0.5; f.svMine = 0; f.svPinX = f.x; f.svPinY = f.y;
+        const sd = f.x < W / 2 ? 1 : -1, tx = clamp(f.x + sd * (f.r + 26), ARENA.x + 16, ARENA.x + ARENA.w - 16), ty = clamp(f.y - f.r * 0.4, ARENA.y + 16, ARENA.y + ARENA.h - 16);
+        zE('svtable', f, tx, ty, { r: 14, d: 0.85, v: nx });
+      }
+    }
+  }
+  function svStartMine(f, L, Rr, Tp, Bt) {
+    const sx = Rr ? 1 : L ? -1 : 0, sy = Bt ? 1 : Tp ? -1 : 0, wa = Math.atan2(sy, sx), m = svRoll();
+    f.svWallAng = wa; f.svMineMax = 0.58; f.svMine = 0.58; f.svPinX = f.x; f.svPinY = f.y;
+    const bx = f.x + Math.cos(wa) * (f.r + 9), by = f.y + Math.sin(wa) * (f.r + 9);
+    zE('svdig', f, bx, by, { r: 16, d: 0.95, m, wa, bt: 0.58 });
+    for (let i = 0; i < 3; i++) later(0.17 * i + 0.14, () => { if (!f.dead && f.svMine > 0) svSnd('pick'); });
+    later(0.52, () => { if (f.dead) return; svMine(f, 1, m, bx, by); });
+  }
+  function svTick(f, dt) {
+    svEnsure(f);
+    for (const k of ['stSw', 'svMine', 'svCraft', 'svPop', 'svFly', 'svAnv', 'svLand']) if (f[k] > 0) f[k] = Math.max(0, f[k] - dt);
+    if (!(f.stSw > 0) && !(f.dash > 0)) f.svTool = 0;
+    f.svZ = (f.svZ || 0) + ((f.svZT || 0) - (f.svZ || 0)) * Math.min(1, dt * (f.svZK || 10)); if (f.svZ < 0.4 && !(f.svZT > 0)) f.svZ = 0;
+    const tg = findTarget(f);
+    if (tg) { const aa = Math.atan2(tg.y - f.y, tg.x - f.x); f.svAim = f.svAim == null ? aa : svAngLerp(f.svAim, aa, Math.min(1, dt * 9)); }
+    const A = ARENA, m = f.r + 3, L = f.x < A.x + m, Rr = f.x > A.x + A.w - m, Tp = f.y < A.y + m, Bt = f.y > A.y + A.h - m, nw = L || Rr || Tp || Bt;
+    const busy = f.dash > 0 || f.svFly > 0 || f.svZ > 4 || f.svAnv > 0 || f.stun > 1;
+    if (nw && !f.stWall) {
+      f.stWall = 1;
+      if (!busy && !(f.svMine > 0) && !(f.svCraft > 0) && gameTime - (f.stLm || -9) > 1.6) { f.stLm = gameTime; f.stLm3 = gameTime; svStartMine(f, L, Rr, Tp, Bt); }
+      else if (gameTime - (f.stLm3 || -9) > 0.7) { f.stLm3 = gameTime; svMine(f, 1); }
+    } else if (!nw) f.stWall = 0;
+  }
+
+  // ---- Eidolon / Nullity / Focalors helpers ----
+  function eiB(f, c, dm, r, dl, x = {}) { const e = zE('eiburst', f, c.x, c.y, Object.assign({ r, d: dl + 0.7, dl, kb: 130 }, dm ? { dmg: dm, once: 1, iv: 0.05 } : {}, x)); if (e) { e.v10Skill = true; e.v10Ult = !!x.ult; } return e; }
+  function eiSwarm(f) {
+    const A = ARENA, foes = eiFoes(f), n = [16, 12, 9, 6][0] + Math.min(6, f.eiCv | 0);
+    for (let i = 0; i < n; i++) {
+      const x = A.x + 60 + Math.random() * (A.w - 120), y = A.y + 60 + Math.random() * (A.h - 120);
+      eiIl(f, x, y, i % 4 === 0 && foes.length ? { k: 'mimic', tg: choice(foes).uid, life: 9, nob: 1, off: { x: rand(-220, 220), y: rand(-130, 130) } } : { k: i % 3 ? 'idle' : 'clone', pose: i % 4, life: 9, vx: i % 3 === 1 ? rand(-35, 35) : 0, vy: i % 3 === 1 ? rand(-35, 35) : 0 });
+    }
+  }
+  function nlTear(f, a, b, dm, dl, w) { const e = zE('nltear', f, a.x, a.y, Object.assign({ r: 20, d: dl + 1, x2: b.x, y2: b.y, w, dl, kb: 60, seed: Math.random() * 99 }, dm ? { dmg: dm, once: 1, iv: 0.05 } : {})); if (e) { e.v10Skill = true; e.v10Ult = true; } return e; }
+  function nlClear() { for (const q of fighters) { if (!q) continue; q.nlDelAt = 0; q.nlUlt2 = 0; } }
+  function foStage() { for (const e of effects) { if (e.k === 'fostage' && e.s === 'focalors' && e.age < e.duration) return e; } return null; }
+  function foAct(f, num, title, sub) { const st = foStage(); if (!st) return; st.o.act = { num, title, sub, t: st.age }; }
+
+  // ---- Seraphim ----
+  const srIs = f => !!f && f.id === 'seraphim' && !f.twin;
+  function srEnsure(f) {
+    if (f.srP) return;
+    f.srEye = [0.28, 0.28, 0.28]; f.srEyeT = [-99, -99, -99]; f.srP = { face: 0, feet: 0, fly: 0 }; f.srSeq = []; f.srHoly = f.srHoly || 0; f.srHolyMax = 5; f.srFeathCD = 0;
+    f.srFace = 0; f.srFaceMax = 1.5; f.srAbs = 0; f.srReflect = 0; f.srFeet = 0; f.srFly = null; f.srUlt = null; f.srTrail = []; f.srV = null; f.srWit = 0; f.srFlick = 0;
+  }
+  function srFeatherShot(f, t, dmg, off) {
+    const p = zP(f, t, dmg, 330, { r: 5, life: 2.4, homing: 0.55 }); if (!p) return null;
+    p.s = 'seraphim';
+    if (off) { const a = Math.atan2(p.vy, p.vx) + off, v = Math.hypot(p.vx, p.vy); p.vx = Math.cos(a) * v; p.vy = Math.sin(a) * v; p.rot = a; }
+    return p;
+  }
+  function srThrice(f) {
+    f.srHoly = f.srHolyMax = 5; f.srFeathCD = 0.2; f.srEye = [1, 1, 1];
+    zE('srhalo', f, f.x, f.y, { r: 170, d: 1.5, fol: 1 });
+    floatText(f.x, f.y - f.r - 46, 'THRICE-HOLY', SR.gold, 15);
+    for (let k = 0; k < 4; k++) particle(f.x + rand(-f.r, f.r), f.y + rand(-f.r, f.r), f, 1, 'ultimate');
+    srChoir(2.4); srTing(2); later(0.18, () => srTing(4)); later(0.36, () => srTing(6));
+  }
+  function srPosture(f, i) {
+    if (!srLive(f)) return; srEnsure(f);
+    f.srEye[i] = 1; f.srEyeT[i] = gameTime;
+    const now = gameTime;
+    f.srSeq = f.srSeq.filter(s => now - s.t < 16);
+    const last = f.srSeq[f.srSeq.length - 1];
+    if (last && last.i === i) f.srSeq = [];
+    f.srSeq.push({ i, t: now });
+    zE('sreyes', f, f.x, f.y, { r: 72, d: 0.9, fol: 1, i });
+    v13_3GainUlt(f, 26, 'posture');
+    if (f.srSeq.length >= 3) { const set = new Set(f.srSeq.slice(-3).map(s => s.i)); if (set.size === 3) { srThrice(f); f.srSeq = []; } }
+  }
+  function srFaceRelease(f) {
+    f.srEye[0] = 1; f.srEyeT[0] = gameTime;
+    const n = Math.max(2, Math.min(9, f.srAbs | 0));
+    zE('srsnap', f, f.x, f.y, { r: 130, d: 0.8, fol: 1, n });
+    floatText(f.x, f.y - f.r - 32, 'EYES OPEN', SR.iris, 11); srTing(3);
+    for (let i = 0; i < n; i++) later(i * 0.07, () => { if (!srLive(f)) return; const tg = srFoe(f); if (tg) srFeatherShot(f, tg, 4.4, (i - (n - 1) / 2) * 0.26); });
+    f.srAbs = 0;
+  }
+  function srFlyStep(f, dt) {
+    const s = f.srFly; if (!s) return;
+    if (f.stun > 0.5 || f.dead) { f.srFly = null; return; }
+    s.t += dt; const u = clamp(s.t / s.dur, 0, 1), A = ARENA, cx = A.x + A.w / 2, cy = A.y + A.h / 2, foe = srFoe(f);
+    const tx = foe ? cx + (foe.x - cx) * 0.55 : cx, ty = foe ? cy + (foe.y - cy) * 0.55 : cy;
+    const th = s.th0 + s.dir * u * 6.2832 * 1.7, R = 215 - 150 * srEase(u) + 22 * Math.sin(u * 9);
+    const px = tx + Math.cos(th) * R, py = ty + Math.sin(th) * R, w = srEase(clamp(u / 0.16, 0, 1));
+    const nx = s.sx + (px - s.sx) * w, ny = s.sy + (py - s.sy) * w;
+    const ox = f.x, oy = f.y; warp(f, nx, ny);
+    f.vx = (f.x - ox) / Math.max(dt, 0.001) * 0.35; f.vy = (f.y - oy) / Math.max(dt, 0.001) * 0.35;
+    if (!(s.hit instanceof Set)) s.hit = new Set(s.hit || []);
+    for (const q of srFoes(f)) {
+      if (s.hit.has(q.uid)) continue;
+      if (Math.hypot(q.x - f.x, q.y - f.y) < f.r + q.r + 14) {
+        s.hit.add(q.uid); q.srWit = 4.2; hurt(q, 6, f, 'skill');
+        zE('srwit', f, q.x, q.y, { r: 36, d: 4.2, ft: q.uid });
+        floatText(q.x, q.y - q.r - 28, 'WITNESSED', SR.iris, 11); srTing(5);
+      }
+    }
+    if (s.t >= s.dur) { f.srFly = null; const a = Math.atan2(f.y - ty, f.x - tx) + s.dir * 1.2, sp = 128; f.vx = Math.cos(a) * sp; f.vy = Math.sin(a) * sp; }
+  }
+  function srTick(f, dt) {
+    srEnsure(f);
+    if (f.srV && f.srFeet > 0) { const dx = f.vx - f.srV.x, dy = f.vy - f.srV.y; if (Math.hypot(dx, dy) > 28) { f.vx = f.srV.x; f.vy = f.srV.y; } }
+    const hadFace = f.srFace > 0;
+    if (f.srFace > 0) {
+      f.srFace -= dt; f.srEye[0] = 0; f.slow = Math.max(f.slow || 0, 0.3);
+      if (f.srReflect) {
+        for (const p of projectiles) {
+          if (p.target !== f.uid || p.srRef) continue; const o = srF(p.owner); if (!o || !api.isEnemy(f, o, roomRef)) continue;
+          if (Math.hypot(p.x - f.x, p.y - f.y) < f.r + (p.r || 5) + 36) {
+            const sp = Math.hypot(p.vx, p.vy) || 300, a = Math.atan2(o.y - p.y, o.x - p.x);
+            p.owner = f.uid; p.team = f.team; p.target = o.uid; p.vx = Math.cos(a) * sp * 1.1; p.vy = Math.sin(a) * sp * 1.1; p.rot = a; p.age = 0; p.homing = Math.max(p.homing || 0, 0.3); p.srRef = 1;
+            f.srReflect = 0; f.srAbs = Math.min(9, (f.srAbs || 0) + 1);
+            zE('srreflect', f, p.x, p.y, { r: 50, d: 0.5 }); floatText(f.x, f.y - f.r - 30, 'REFLECTED', SR.hot, 11); srTing(7); break;
+          }
+        }
+      }
+      if (f.srFace <= 0) { f.srFace = 0; f.srReflect = 0; }
+    }
+    f.srFeet = Math.max(0, (f.srFeet || 0) - dt);
+    if (f.srHoly > 0) f.srHoly = Math.max(0, f.srHoly - dt);
+    if (f.srUlt) { f.srUlt.t += dt; f.vx *= Math.pow(0.05, dt); f.vy *= Math.pow(0.05, dt); if (f.srUlt.t >= f.srUlt.D) f.srUlt = null; }
+    const P = f.srP, k = Math.min(1, dt * 9);
+    P.face += ((f.srFace > 0 ? 1 : 0) - P.face) * Math.min(1, dt * (f.srFace > 0 ? 10 : 15));
+    P.feet += ((f.srFeet > 0 ? 1 : 0) - P.feet) * Math.min(1, dt * 6);
+    P.fly += ((f.srFly ? 1 : 0) - P.fly) * k;
+    for (let i = 0; i < 3; i++) { if (f.srHoly > 0 || f.srUlt) f.srEye[i] = 1; else if (i === 0 && f.srFace > 0) f.srEye[0] = 0; else f.srEye[i] = Math.max(0.28, f.srEye[i] - dt * 0.3); }
+    if (f.srFeet > 0) for (const q of srFoes(f)) { if (Math.hypot(q.x - f.x, q.y - f.y) < SR_RING + q.r) { q.burn = Math.max(q.burn || 0, 1.4); q.burnSource = f.uid; } }
+    if (f.srHoly > 0) {
+      for (const q of srFoes(f)) { if (Math.hypot(q.x - f.x, q.y - f.y) < f.r + q.r + 18) { q.burn = Math.max(q.burn || 0, 2); q.burnSource = f.uid; } }
+      f.srFeathCD -= dt; if (f.srFeathCD <= 0 && !f.srUlt) { f.srFeathCD = 0.55; const tg = srFoe(f); if (tg) srFeatherShot(f, tg, 3, rand(-0.22, 0.22)); }
+    }
+    if (hadFace && f.srFace <= 0) srFaceRelease(f);
+    if (f.srFly) srFlyStep(f, dt);
+    if (f.srUlt) f.invuln = Math.max(f.invuln || 0, 0.2);
+    f.srV = { x: f.vx, y: f.vy };
+  }
+
+  // ---- Eidolon illusions: age, drift and expire (state the client draws) ----
+  function eiTickIllusions(f, dt) {
+    if (!Array.isArray(f.eiIl)) return;
+    for (const il of f.eiIl) { il.age = (il.age || 0) + dt; il.x += (il.vx || 0) * dt; il.y += (il.vy || 0) * dt; }
+    f.eiIl = f.eiIl.filter(il => il.age < (il.life || 4));
+  }
+
+  // ---- Timers the original game counts down every frame inside each character's update wrapper ----
+  const CHAR_TIMERS = ['eiCast','eiDec','eiMan','eiMgT','eiShT','eiTp','eiUlt','eiVan','foCast','foFan','foHead','foPulse','foTear','foUlt','foWake',
+    'llAtk','llDuet','llFinT','llPulse','llSw','llWaltz','mcHitCD','mcRecoil','mcUnr','nlBlink','nlCast','nlCor','nlGone','nlRed','nlTT','nlUlt','nlWard',
+    'pxCastPulse','pxReview','pxUlt','srFlick','srWit','clFull'];
+  function charTick(f, dt) {
+    if (!f || f.dead) return;
+    if (f.srWit > 0) f.srWit = Math.max(0, f.srWit - dt);
+    for (const k of CHAR_TIMERS) if (f[k] > 0) f[k] = Math.max(0, f[k] - dt);
+    if (srIs(f)) srTick(f, dt);
+    else if (f.id === 'odette' && !f.twin) odTick(f, dt);
+    else if (f.id === 'steve' && !f.twin) svTick(f, dt);
+    else if (f.id === 'eidolon' && !f.twin) eiTickIllusions(f, dt);
+  }
+
   function passiveStep(room, f, dt) {
     syncRoom(room);
     if (!f || f.dead) return;
     withReason('passive', -1, f, () => {
       try {
-        if (f.id === 'odette') odettePhase(room, f, dt);
+        charTick(f, dt);
         if (typeof SOURCE_ZS.zPass === 'function') SOURCE_ZS.zPass(f, dt);
         if (f.id === 'lunar' && Math.random() < dt * 0.6 && f.hp < f.maxHp) heal(f, 0.45);
         if (f.id === 'ceres' && Math.random() < dt * 1.1) heal(f, 0.65);
@@ -1581,7 +1788,7 @@ Object.assign(SOURCE_ZS,{
       }
     }
   }
-  return { castSkill, basicAttack, passiveStep, stepScheduled, stepEffects, stepSummons, sourceCoverage, handlerFor, buildVariant };
+  return { steveMine: (f, n, mm, sx, sy) => svMine(f, n, mm, sx, sy), castSkill, basicAttack, passiveStep, stepScheduled, stepEffects, stepSummons, sourceCoverage, handlerFor, buildVariant };
 }
 
 // This data-driven source engine intentionally keeps the original character

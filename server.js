@@ -22,9 +22,6 @@ const MAX_MESSAGE_BYTES = 16 * 1024;
 const HEARTBEAT_MS = 25_000;
 const TICK_MS = 50;                 // 20 authoritative simulation ticks/sec
 const SNAPSHOT_MS = 50;              // 20 state snapshots/sec
-const SNAPSHOT_SLACK_MS = 6;         // timer jitter tolerance so ticks are not skipped
-const MAX_PENDING_EVENTS = 700;      // visual/combat events waiting for the next snapshot
-const MAX_EVENTS_PER_SNAPSHOT = 500;
 const MAX_QUEUE_PER_MODE = 300;
 const MAX_FIGHTERS = 4;
 const FIGHTER_ID_RE = /^[a-zA-Z0-9_-]{1,80}$/;
@@ -89,8 +86,10 @@ const server = http.createServer((req, res) => {
     json(res, 200, {
       ok: true,
       service: 'celestial-crash-online',
-      stage: 'full-roster-source-engine-v2',
-      engineVersion: 'server-source-ability-engine-v2',
+      stage: 'full-roster-source-engine-v1',
+      engineVersion: 'server-source-ability-engine-v1',
+      snapshotEffects: true,
+      presentation: 'sfx-cast-fx-v1',
       queuedPlayers: queuedCount(),
       activeRooms: rooms.size,
       connectedPlayers: clients.size,
@@ -172,7 +171,7 @@ function seededJitter() { return (Math.random() * 2 - 1); }
 function emitEvent(room, type, payload = {}) {
   room.sim.eventSeq += 1;
   room.sim.events.push({ seq: room.sim.eventSeq, type, ...payload });
-  if (room.sim.events.length > MAX_PENDING_EVENTS) room.sim.events.splice(0, room.sim.events.length - MAX_PENDING_EVENTS);
+  if (room.sim.events.length > 80) room.sim.events.splice(0, room.sim.events.length - 80);
 }
 function capTeamShield(fighter) { SOURCE_RULES.capShield(fighter); }
 
@@ -286,6 +285,11 @@ function enqueue(player, mode, fighterId) {
 function dealDamage(room, target, rawDamage, source, reason = 'projectile') {
   if (!target || target.dead || target.invuln > 0) return 0;
   if (source && !isEnemy(source, target, room)) return 0;
+  // V45 Steve: tool tier and mining soften incoming damage.
+  if (target.id === 'steve' && !target.twin) {
+    if (target.stT >= 2) rawDamage *= target.stT >= 4 ? 0.86 : 0.93;
+    if (target.svMine > 0) rawDamage *= 0.75;
+  }
 
   // Preserve the Button source wrapper: it adjusts incoming raw damage before
   // the shared V10 damage pipeline applies source tuning and the global .68 factor.
@@ -383,6 +387,10 @@ function dealDamage(room, target, rawDamage, source, reason = 'projectile') {
 
   capTeamShield(target);
   if (source) capTeamShield(source);
+  // V45 Steve: 20% chance to pick up a material whenever his hit lands.
+  if (healthDamage > 0 && source && source.id === 'steve' && !source.dead && !source.twin && reason !== 'burn' && Math.random() < 0.2) {
+    try { SOURCE_ABILITIES.steveMine(source, 1, null, target.x, target.y); } catch { /* cosmetic pickup only */ }
+  }
   emitEvent(room, 'hit', {
     ownerUid: source?.uid || null, targetUid: target.uid, x: target.x, y: target.y,
     damage: Math.round(healthDamage * 10) / 10,
@@ -673,6 +681,13 @@ const SOURCE_ABILITIES = createSourceAbilityEngine({
   heal(room, fighter, amount) { return SOURCE_RULES.applySourceHeal(fighter, amount, room.sim.elapsed); }
 });
 
+function ultimateGate(room) {
+  const now = room.sim.elapsed;
+  if ((room.sim.ultNext || 0) > now + 12) room.sim.ultNext = 0;
+  if (now < (room.sim.ultNext || 0)) return false;
+  room.sim.ultNext = now + 3.6 + Math.random() * 2.6;
+  return true;
+}
 function stepFighter(room, f, dt) {
   if (f.dead) { f.koTime += dt; return; }
   f.age += dt; f.anim += dt * 5;
@@ -694,10 +709,10 @@ function stepFighter(room, f, dt) {
   f.x += f.vx * dt * mult; f.y += f.vy * dt * mult;
   const left = ARENA.x + f.r, right = ARENA.x + ARENA.w - f.r;
   const top = ARENA.y + f.r, bottom = ARENA.y + ARENA.h - f.r;
-  if (f.x < left) { f.x = left; f.vx = Math.abs(f.vx) * 0.985; f.lastDir = 1; emitEvent(room, 'wall', { ownerUid: f.uid, x: f.x, y: f.y }); }
-  else if (f.x > right) { f.x = right; f.vx = -Math.abs(f.vx) * 0.985; f.lastDir = -1; emitEvent(room, 'wall', { ownerUid: f.uid, x: f.x, y: f.y }); }
-  if (f.y < top) { f.y = top; f.vy = Math.abs(f.vy) * 0.985; }
-  else if (f.y > bottom) { f.y = bottom; f.vy = -Math.abs(f.vy) * 0.985; }
+  if (f.x < left) { f.x = left; f.vx = Math.abs(f.vx) * 0.985; f.lastDir = 1; emitEvent(room, 'wall', { ownerUid: f.uid, x: f.x, y: f.y, side: 0 }); }
+  else if (f.x > right) { f.x = right; f.vx = -Math.abs(f.vx) * 0.985; f.lastDir = -1; emitEvent(room, 'wall', { ownerUid: f.uid, x: f.x, y: f.y, side: 1 }); }
+  if (f.y < top) { f.y = top; f.vy = Math.abs(f.vy) * 0.985; emitEvent(room, 'wall', { ownerUid: f.uid, x: f.x, y: f.y, side: 2 }); }
+  else if (f.y > bottom) { f.y = bottom; f.vy = -Math.abs(f.vy) * 0.985; emitEvent(room, 'wall', { ownerUid: f.uid, x: f.x, y: f.y, side: 3 }); }
   const speed = Math.hypot(f.vx, f.vy);
   if (speed < 82) { const a = Math.atan2(f.vy || seededJitter(), f.vx || seededJitter()); f.vx = Math.cos(a) * 90; f.vy = Math.sin(a) * 90; }
   const speedCap = f.dash > 0 ? 560 : 225;
@@ -715,13 +730,15 @@ function stepFighter(room, f, dt) {
   // Button intentionally retains its separately tested bespoke online pilot.
   SOURCE_ABILITIES.passiveStep(room, f, dt);
   if (f.attackCD <= 0) {
-    f.attackCD = 0.9 + (Math.random() * 0.18 - 0.07);
+    f.attackCD = 0.95 + (Math.random() * 0.23 - 0.1);   // V45: .95 + rand(-.1,.13)
     SOURCE_ABILITIES.basicAttack(room, f, target, distance);
   }
   for (let i = 0; i < f.skillCD.length; i++) {
     f.skillCD[i] = Math.max(0, f.skillCD[i] - dt);
-    const maxRange = i === 3 ? 520 : (i === 2 ? 390 : 465);
-    if (f.skillCD[i] <= 0 && distance <= maxRange && !((f.odCut || 0) > 0)) {
+    if (f.skillCD[i] <= 0) {
+      // V45 rule: the original game has no range limit on skills, and only one
+      // ultimate may start per 3.6-6.2 s window across the whole battle.
+      if (i === 3 && !f.twin && !ultimateGate(room)) { f.skillCD[3] = 0.5 + Math.random() * 1.1; continue; }
       const accepted = SOURCE_ABILITIES.castSkill(room, f, target, i);
       f.skillCD[i] = accepted ? SOURCE_RULES.cooldownAfterCastFor(f.id, i) : 0.35;
       // One cast per server tick keeps long ult timelines and projectiles bounded.
@@ -808,7 +825,7 @@ function stepCollisions(room) {
         const damage = 6 + Math.min(11, hitSpeed * 0.052);
         dealDamage(room, a, damage * 0.82, b, 'collision');
         dealDamage(room, b, damage * 0.82, a, 'collision');
-        emitEvent(room, 'collision', { ownerUid: a.uid, targetUid: b.uid, x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
+        emitEvent(room, 'collision', { ownerUid: a.uid, targetUid: b.uid, x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, hitSpeed: Math.round(hitSpeed) });
       }
       for (const f of [a, b]) {
         f.x = clamp(f.x, ARENA.x + f.r, ARENA.x + ARENA.w - f.r);
@@ -844,6 +861,50 @@ function finishRoom(room, winner) {
   rooms.delete(room.id);
   for (const player of room.players) resetRoomPlayer(player);
 }
+const FIGHTER_CORE_KEYS = new Set(['uid','playerId','playerIndex','fighterId','id','team','x','y','vx','vy','r','hp','maxHp','shield','age','anim','dead','koTime','attackCD','hitFlash','invuln','stun','slow','rooted','energy','lastDir','markTarget','skillCD','cooldowns','trail','c','contactCD','grp','name','twin','mast','life','dash','burn','pow','sourceSummon','srFly','srV','srTrail','srSeq']);
+// Character-specific state (forms, illusions, charges, seals ...) that the original
+// renderers read. Only plain numbers/booleans/short strings/small flat objects are sent.
+function publicFighterState(f) {
+  const out = {};
+  let bytes = 0;
+  const num = (v) => Math.round(v * 1000) / 1000;
+  for (const [k, v] of Object.entries(f)) {
+    if (FIGHTER_CORE_KEYS.has(k) || k.startsWith('_') || k.startsWith('bt')) continue;
+    let val;
+    if (typeof v === 'number') { if (!Number.isFinite(v)) continue; val = num(v); }
+    else if (typeof v === 'boolean') val = v;
+    else if (typeof v === 'string') { if (v.length > 32) continue; val = v; }
+    else if (Array.isArray(v)) {
+      if (v.length > 24 || !v.every(x => (typeof x === 'number' && Number.isFinite(x)) || typeof x === 'boolean')) continue;
+      val = v.map(x => typeof x === 'number' ? num(x) : x);
+    } else if (v && typeof v === 'object' && Object.getPrototypeOf(v) === Object.prototype) {
+      const o = {}; let ok = true, n = 0;
+      for (const [kk, vv] of Object.entries(v)) {
+        if (++n > 16) { ok = false; break; }
+        if (typeof vv === 'number' && Number.isFinite(vv)) o[kk] = num(vv);
+        else if (typeof vv === 'boolean' || (typeof vv === 'string' && vv.length <= 24)) o[kk] = vv;
+        else { ok = false; break; }
+      }
+      if (!ok) continue;
+      val = o;
+    } else continue;
+    const size = k.length + JSON.stringify(val).length + 4;
+    if (bytes + size > 2400) break;
+    bytes += size; out[k] = val;
+  }
+  return out;
+}
+function publicFighterDelta(f) {
+  const cur = publicFighterState(f);
+  const sent = f._fxSent || (f._fxSent = {});
+  const set = {}, del = [];
+  for (const [k, v] of Object.entries(cur)) {
+    const json = JSON.stringify(v);
+    if (sent[k] !== json) { set[k] = v; sent[k] = json; }
+  }
+  for (const k of Object.keys(sent)) if (!(k in cur)) { del.push(k); delete sent[k]; }
+  return { set, del };
+}
 function publicFighter(f) {
   return {
     uid: f.uid, playerId: f.playerId, playerIndex: f.playerIndex, id: f.id,
@@ -853,9 +914,9 @@ function publicFighter(f) {
     invuln: f.invuln, stun: f.stun, slow: f.slow, rooted: f.rooted,
     energy: f.energy, lastDir: f.lastDir, markTarget: f.markTarget, sourceVariant: f.sourceVariant || 0, odetteAct: f.odetteAct || 0, loversLead: f.loversLead || 0,
     focalorsStage: f.focalorsStage || 0, foForm: f.foForm || 0, srFace: f.srFace || 0, srFeet: f.srFeet || 0, srFly: typeof f.srFly === 'object' && f.srFly ? Math.max(0, (f.srFly.dur || 0) - (f.srFly.t || 0)) : (f.srFly || 0),
-    odP: f.odP || 0, odShow: f.odShow || 0, odCut: f.odCut || 0, odCutT: f.odCutT || 0,
-    srUlt: (f.srUlt && typeof f.srUlt === 'object') ? { t: Number(f.srUlt.t) || 0, D: Number(f.srUlt.D) || 0 } : (f.srUlt || 0), srHoly: f.srHoly || 0, srAbs: f.srAbs || 0, foUlt: f.foUlt || 0, eiUlt: f.eiUlt || 0, nlUlt: f.nlUlt || 0, nlRed: f.nlRed || 0, llWaltz: f.llWaltz || 0, llDuet: f.llDuet || 0,
     mcSeals: f.mcSeals, mcUnr: f.mcUnr, stSw: f.stSw || 0, svTool: f.svTool || 0, twin: !!f.twin, mast: f.mast || null, life: f.life || 0,
+    dash: f.dash || 0, burn: f.burn || 0, name: f.name || null, sourceSummon: !!f.sourceSummon, pow: f.pow || 1, grp: f.twin ? (f.grp || null) : undefined,
+    ...(() => { const d = publicFighterDelta(f); const o = {}; if (Object.keys(d.set).length) o.fx = d.set; if (d.del.length) o.fxDel = d.del; return o; })(),
     ...(f.id === 'button' ? {
       btLone: f.btLone, btWatch: f.btWatch, btHitSrc: f.btHitSrc, btHitD: f.btHitD,
       btHitT: f.btHitT, btLoneCD: f.btLoneCD, btCtr: f.btCtr, btCast: f.btCast,
@@ -864,17 +925,77 @@ function publicFighter(f) {
     } : {})
   };
 }
+function publicEffectOpts(o) {
+  // Only plain data is sent to clients: numbers, strings, booleans and short numeric arrays.
+  const out = {};
+  if (!o || typeof o !== 'object') return out;
+  let n = 0;
+  for (const [k, v] of Object.entries(o)) {
+    if (n >= 40) break;
+    if (typeof v === 'number') { if (Number.isFinite(v)) { out[k] = Math.round(v * 1000) / 1000; n++; } }
+    else if (typeof v === 'string') { out[k] = v.slice(0, 40); n++; }
+    else if (typeof v === 'boolean') { out[k] = v; n++; }
+    else if (Array.isArray(v) && v.length <= 12 && v.every(x => typeof x === 'number' && Number.isFinite(x))) { out[k] = v; n++; }
+    else if (v && typeof v === 'object' && Object.getPrototypeOf(v) === Object.prototype) {
+      const sub = {}; let ok = true, m = 0;
+      for (const [kk, vv] of Object.entries(v)) {
+        if (++m > 8) { ok = false; break; }
+        if (typeof vv === 'number' && Number.isFinite(vv)) sub[kk] = Math.round(vv * 1000) / 1000;
+        else if (typeof vv === 'boolean') sub[kk] = vv;
+        else if (typeof vv === 'string') sub[kk] = vv.slice(0, 80);
+        else { ok = false; break; }
+      }
+      if (ok) { out[k] = sub; n++; }
+    }
+  }
+  return out;
+}
+function publicEffect(e) {
+  // The server's generic zone effect is the original V45 "z" effect on the client.
+  const isZone = e.type === 'source_zone' || e.z;
+  if (e._netSent) {
+    // Already known by the clients: send only what moves/changes (snapshots stay small).
+    const small = { uid: e.uid, x: e.x, y: e.y, age: e.age, duration: e.duration, r: e.r, target: e.target || null };
+    if (Number.isFinite(e.angle)) small.angle = e.angle;
+    if (isZone) {
+      const o = publicEffectOpts(e.o), json = JSON.stringify(o);
+      if (json !== e._netO) { small.o = o; e._netO = json; }
+    }
+    return small;
+  }
+  e._netSent = true;
+  const out = {
+    uid: e.uid, type: isZone ? 'z' : e.type, x: e.x, y: e.y, owner: e.owner, target: e.target || null,
+    age: e.age, duration: e.duration, r: e.r, level: e.level || 1
+  };
+  if (Number.isFinite(e.angle)) out.angle = e.angle;
+  if (isZone) { out.z = 1; out.k = e.k; out.s = e.s || e.ownerId || null; out.o = publicEffectOpts(e.o); e._netO = JSON.stringify(out.o); }
+  return out;
+}
+const PROJECTILE_SKIP = new Set(['uid','owner','target','x','y','vx','vy','r','damage','age','life','type','s','rot','skillIndex','trail','hit','hitUids','team','reason','source','special','pierce','homing','rawDamage']);
+// Per-projectile render hints from the original (volley colour/index, lead, form ...).
+function publicProjectileExtras(p) {
+  const out = {}; let n = 0;
+  for (const [k, v] of Object.entries(p)) {
+    if (PROJECTILE_SKIP.has(k) || k.startsWith('_') || n >= 8) continue;
+    if (typeof v === 'number' && Number.isFinite(v)) { out[k] = Math.round(v * 100) / 100; n++; }
+    else if (typeof v === 'boolean') { out[k] = v; n++; }
+    else if (typeof v === 'string' && v.length <= 24) { out[k] = v; n++; }
+  }
+  return out;
+}
 function publicProjectile(p) {
   return {
     uid: p.uid, owner: p.owner, target: p.target, x: p.x, y: p.y,
     vx: p.vx, vy: p.vy, r: p.r, damage: p.damage, age: p.age, life: p.life,
-    type: p.type, s: p.s, rot: p.rot, skillIndex: p.skillIndex, trail: p.trail.slice(-6)
+    type: p.type, s: p.s, rot: p.rot, skillIndex: p.skillIndex, trail: p.trail.slice(-6),
+    ...publicProjectileExtras(p)
   };
 }
 function broadcastSnapshot(room, force = false) {
   if (room.ended) return;
   const now = Date.now();
-  if (!force && now - room.lastSnapshotAt < SNAPSHOT_MS - SNAPSHOT_SLACK_MS) return;
+  if (!force && now - room.lastSnapshotAt < SNAPSHOT_MS) return;
   room.lastSnapshotAt = now;
   room.sim.seq += 1;
   const snapshot = {
@@ -882,13 +1003,20 @@ function broadcastSnapshot(room, force = false) {
     impacts: room.sim.impacts, gameOver: false, matchStarted: true,
     fighters: room.sim.fighters.map(publicFighter),
     projectiles: room.sim.projectiles.slice(-70).map(publicProjectile),
-    events: room.sim.events.slice(-MAX_EVENTS_PER_SNAPSHOT)
+    effects: (room.sim.sourceEffects || []).filter(e => e && e.age < e.duration).slice(-90).map(publicEffect),
+    timeStop: room.sim.sourceTimeStop ? { timer: room.sim.sourceTimeStop.timer, owner: room.sim.sourceTimeStop.owner, target: room.sim.sourceTimeStop.target } : null,
+    fourthWall: room.sim.sourceFourthWall ? { timer: room.sim.sourceFourthWall.timer, x: room.sim.sourceFourthWall.x, y: room.sim.sourceFourthWall.y, side: room.sim.sourceFourthWall.side, owner: room.sim.sourceFourthWall.owner?.uid || room.sim.sourceFourthWall.owner || null } : null,
+    events: room.sim.events.slice(-80)
   };
-  // Events are cleared only after they were actually sent. Previously they were
-  // wiped at the start of every tick, so any tick whose snapshot was skipped by
-  // timer jitter silently lost its skill/effect visuals.
+  // Serialise once for every player, rounding long floats (positions, velocities, ages) to 2 decimals.
+  const payload = JSON.stringify({ type: 'battle_snapshot', roomId: room.id, snapshot },
+    (key, value) => (typeof value === 'number' && !Number.isInteger(value) ? Math.round(value * 100) / 100 : value));
+  for (const player of room.players) {
+    if (player.ws.readyState !== WebSocket.OPEN) continue;
+    try { player.ws.send(payload); } catch { /* close event performs cleanup */ }
+  }
+  // Events are only cleared after they were actually sent, so a skipped snapshot never loses visuals.
   room.sim.events = [];
-  sendRoom(room, 'battle_snapshot', { roomId: room.id, snapshot });
 }
 function tickRoom(room, dt) {
   if (room.ended) return;

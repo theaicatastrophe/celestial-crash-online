@@ -47,7 +47,7 @@ for (const entry of catalog.fighters) {
       const a = makeFighter(entry.id, 0, `${entry.id}-${vi}-${skillIndex}`);
       const b = makeFighter('gemini', 1, `target-${entry.id}-${vi}-${skillIndex}`);
       const room = makeRoom(a,b);
-      if (entry.id === 'odette') { a.sourceVariant = vi; a.odP = vi; }
+      if (entry.id === 'odette') a.sourceVariant = vi;
       if (entry.id === 'lovers') a.loversLead = vi;
       try {
         if (entry.id !== 'button') {
